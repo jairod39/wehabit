@@ -1,0 +1,75 @@
+"""
+Punto de entrada del bot. Este es el UNICO archivo que se ejecuta
+directamente (con "python -m bot.main"). Solo conecta piezas, no
+tiene logica propia.
+"""
+
+from telegram.request import HTTPXRequest
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    CallbackQueryHandler,
+    MessageHandler,
+    ConversationHandler,
+    filters,
+)
+
+from motor.config import TELEGRAM_BOT_TOKEN, validar_configuracion
+from bot.handlers import start, explorar, agendar
+from bot.keep_alive import mantener_vivo
+
+
+def construir_aplicacion() -> Application:
+    validar_configuracion()
+    solicitud = HTTPXRequest(
+        connect_timeout=20.0,
+        read_timeout=20.0,
+        write_timeout=20.0,
+        pool_timeout=20.0,
+    )
+    app = Application.builder().token(TELEGRAM_BOT_TOKEN).request(solicitud).build()
+
+    conversacion = ConversationHandler(
+        entry_points=[
+            CommandHandler("start", start.cmd_start),
+            CallbackQueryHandler(explorar.iniciar_exploracion, pattern="^menu:explorar$"),
+        ],
+        states={
+            explorar.ELEGIR_PAIS: [
+                CallbackQueryHandler(explorar.recibir_tipo, pattern="^tipo:")
+            ],
+            explorar.ELEGIR_CIUDAD: [
+                CallbackQueryHandler(explorar.recibir_pais, pattern="^pais:")
+            ],
+            explorar.VER_LISTA: [
+                CallbackQueryHandler(explorar.recibir_ciudad, pattern="^ciudad:"),
+                CallbackQueryHandler(explorar.mostrar_detalle, pattern="^ver:"),
+                CallbackQueryHandler(agendar.iniciar_agendamiento, pattern="^agendar:"),
+                CallbackQueryHandler(explorar.iniciar_exploracion, pattern="^menu:explorar$"),
+            ],
+            agendar.PEDIR_FIN: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, agendar.recibir_fecha_inicio)
+            ],
+            agendar.ELEGIR_EXTRAS: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, agendar.recibir_fecha_fin)
+            ],
+            agendar.CONFIRMAR: [
+                CallbackQueryHandler(agendar.alternar_extra, pattern="^extra:"),
+                CallbackQueryHandler(agendar.confirmar_reserva, pattern="^confirmar:"),
+            ],
+        },
+        fallbacks=[CommandHandler("start", start.cmd_start)],
+    )
+
+    app.add_handler(conversacion)
+    app.add_handler(CommandHandler("probar", start.cmd_probar))
+    app.add_handler(CallbackQueryHandler(start.menu_publicar, pattern="^menu:publicar$"))
+
+    return app
+
+
+if __name__ == "__main__":
+    mantener_vivo()
+    aplicacion = construir_aplicacion()
+    print("ChambreBot esta corriendo...")
+    aplicacion.run_polling(drop_pending_updates=True)
