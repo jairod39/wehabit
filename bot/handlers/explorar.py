@@ -21,6 +21,7 @@ ELEGIR_TIPO, ELEGIR_PAIS, ELEGIR_CIUDAD, VER_LISTA = range(4)
 
 
 async def iniciar_exploracion(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("RASTRO: iniciar_exploracion fue llamada", flush=True)
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(textos.ELEGIR_TIPO, reply_markup=teclados.teclado_tipos())
