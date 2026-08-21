@@ -13,6 +13,7 @@ from motor.sheets_client import leer_todas_las_filas
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("RASTRO: cmd_start fue llamado", flush=True)
     await update.message.reply_text(
         textos.BIENVENIDA, reply_markup=teclados.teclado_menu_principal()
     )
