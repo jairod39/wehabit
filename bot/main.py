@@ -19,6 +19,17 @@ from bot.handlers import start, explorar, agendar
 from bot.keep_alive import mantener_vivo
 
 
+async def manejar_error(update, context):
+    """Imprime en los logs CUALQUIER error que ocurra en cualquier parte
+    del bot, con todo el detalle, para poder diagnosticar sin adivinar."""
+    import traceback
+    print("=" * 60, flush=True)
+    print(f"RASTRO: ERROR CAPTURADO: {context.error}", flush=True)
+    if context.error:
+        traceback.print_exception(type(context.error), context.error, context.error.__traceback__)
+    print("=" * 60, flush=True)
+
+
 def construir_aplicacion() -> Application:
     validar_configuracion()
     solicitud = HTTPXRequest(
@@ -64,6 +75,7 @@ def construir_aplicacion() -> Application:
     app.add_handler(conversacion)
     app.add_handler(CommandHandler("probar", start.cmd_probar))
     app.add_handler(CallbackQueryHandler(start.menu_publicar, pattern="^menu:publicar$"))
+    app.add_error_handler(manejar_error)
 
     return app
 
