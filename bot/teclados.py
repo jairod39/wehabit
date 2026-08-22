@@ -18,6 +18,12 @@ def teclado_menu_principal() -> InlineKeyboardMarkup:
     ])
 
 
+def teclado_volver_menu() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(textos.BOTON_VOLVER, callback_data="menu:volver")],
+    ])
+
+
 def teclado_tipos() -> InlineKeyboardMarkup:
     filas = [
         [InlineKeyboardButton(tipo.value.capitalize(), callback_data=f"tipo:{tipo.value}")]
