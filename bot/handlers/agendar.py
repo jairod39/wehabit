@@ -19,7 +19,11 @@ from motor.reservas import crear_reserva
 from bot import textos, teclados
 from bot.seguro import llamar_con_limite, ErrorDelMotor
 
-PEDIR_INICIO, PEDIR_FIN, ELEGIR_EXTRAS, CONFIRMAR = range(4)
+# Rango 100+ para no colisionar con los estados de explorar.py (0-3).
+# ConversationHandler usa un solo diccionario de estados para TODO el bot,
+# asi que dos modulos que usen range(4) por separado terminan con los
+# mismos numeros y uno sobreescribe al otro en el diccionario de main.py.
+PEDIR_INICIO, PEDIR_FIN, ELEGIR_EXTRAS, CONFIRMAR = range(100, 104)
 
 
 async def iniciar_agendamiento(update: Update, context: ContextTypes.DEFAULT_TYPE):
