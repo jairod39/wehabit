@@ -75,6 +75,7 @@ def construir_aplicacion() -> Application:
     app.add_handler(conversacion)
     app.add_handler(CommandHandler("probar", start.cmd_probar))
     app.add_handler(CallbackQueryHandler(start.menu_publicar, pattern="^menu:publicar$"))
+    app.add_handler(CallbackQueryHandler(start.menu_volver, pattern="^menu:volver$"))
     app.add_error_handler(manejar_error)
 
     return app
