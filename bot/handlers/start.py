@@ -6,7 +6,7 @@ import asyncio
 import time
 
 from telegram import Update
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, ConversationHandler
 
 from bot import textos, teclados
 from motor.sheets_client import leer_todas_las_filas
@@ -17,6 +17,12 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         textos.BIENVENIDA, reply_markup=teclados.teclado_menu_principal()
     )
+    # IMPORTANTE: /start esta registrado como entry_point Y como fallback.
+    # Si no se devuelve ConversationHandler.END explicitamente, un /start
+    # enviado a mitad de una conversacion (ej. mientras el bot espera una
+    # fecha) NO reinicia el estado interno, y el bot queda esperando la
+    # respuesta anterior aunque en pantalla se vea el menu principal.
+    return ConversationHandler.END
 
 
 async def cmd_probar(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -40,4 +46,15 @@ async def cmd_probar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def menu_publicar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    await query.edit_message_text(textos.PUBLICAR_PROXIMAMENTE)
+    await query.edit_message_text(
+        textos.PUBLICAR_PROXIMAMENTE, reply_markup=teclados.teclado_volver_menu()
+    )
+
+
+async def menu_volver(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Vuelve al menu principal desde una pantalla sin salida (ej. 'publicar')."""
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text(
+        textos.BIENVENIDA, reply_markup=teclados.teclado_menu_principal()
+    )
