@@ -29,12 +29,18 @@ def teclado_tipos() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(tipo.value.capitalize(), callback_data=f"tipo:{tipo.value}")]
         for tipo in TipoPropiedad
     ]
+    filas.append([InlineKeyboardButton(textos.BOTON_VOLVER, callback_data="volver:menu")])
     return InlineKeyboardMarkup(filas)
 
 
-def teclado_opciones(opciones: list[str], prefijo: str) -> InlineKeyboardMarkup:
-    """Teclado generico para elegir entre una lista de textos (paises, ciudades)."""
+def teclado_opciones(
+    opciones: list[str], prefijo: str, volver_callback: str | None = None
+) -> InlineKeyboardMarkup:
+    """Teclado generico para elegir entre una lista de textos (paises, ciudades).
+    Si se pasa volver_callback, agrega un boton 'Volver' al paso anterior."""
     filas = [[InlineKeyboardButton(op, callback_data=f"{prefijo}:{op}")] for op in opciones]
+    if volver_callback:
+        filas.append([InlineKeyboardButton(textos.BOTON_VOLVER, callback_data=volver_callback)])
     return InlineKeyboardMarkup(filas)
 
 
@@ -43,14 +49,19 @@ def teclado_lista_propiedades(propiedades: list[Propiedad]) -> InlineKeyboardMar
     for propiedad in propiedades:
         etiqueta = f"🔥 {propiedad.titulo}" if es_full(propiedad) else propiedad.titulo
         filas.append([InlineKeyboardButton(etiqueta, callback_data=f"ver:{propiedad.id}")])
+    filas.append([InlineKeyboardButton(textos.BOTON_VOLVER, callback_data="volver:ciudad")])
     return InlineKeyboardMarkup(filas)
 
 
-def teclado_detalle_propiedad(propiedad_id: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton(textos.BOTON_AGENDAR, callback_data=f"agendar:{propiedad_id}")],
-        [InlineKeyboardButton(textos.BOTON_VOLVER, callback_data="menu:explorar")],
-    ])
+def teclado_detalle_propiedad(propiedad: Propiedad) -> InlineKeyboardMarkup:
+    filas = []
+    # El agendamiento solo aplica a habitaciones, que se manejan directo con
+    # el dueno. Apartamentos/casas van por casas de arrendamiento externas,
+    # sobre las que no tenemos control ni acceso para agendar nada ahi.
+    if propiedad.tipo == TipoPropiedad.HABITACION:
+        filas.append([InlineKeyboardButton(textos.BOTON_AGENDAR, callback_data=f"agendar:{propiedad.id}")])
+    filas.append([InlineKeyboardButton(textos.BOTON_VOLVER, callback_data="volver:lista")])
+    return InlineKeyboardMarkup(filas)
 
 
 def teclado_extras(propiedad: Propiedad, seleccionados: set[str]) -> InlineKeyboardMarkup:
