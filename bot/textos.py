@@ -34,6 +34,20 @@ PEDIR_FECHA_FIN = "Hasta que fecha? (formato: AAAA-MM-DD)"
 FECHA_INVALIDA = "Esa fecha no la entendi. Usa el formato AAAA-MM-DD, por ejemplo 2026-09-15."
 FECHA_FIN_ANTES_DE_INICIO = "La fecha final no puede ser antes de la inicial. Intenta de nuevo."
 
+PEDIR_HORA_VISITA = "A que hora quieres visitar? (formato: HH:MM, ejemplo 15:30)"
+HORA_INVALIDA = "Esa hora no la entendi. Usa el formato HH:MM, por ejemplo 15:30 o 09:00."
+
+NOTA_UBICACION_PENDIENTE = (
+    "La direccion exacta y el mapa se comparten cuando confirmes tu visita, "
+    "para proteger la privacidad del dueno."
+)
+
+NOTA_SIN_AGENDAMIENTO = (
+    "Este alojamiento se maneja a traves de una casa de arrendamiento. "
+    "Usa el codigo de arriba directamente en su sitio para mas informacion, "
+    "no agendamos la visita por aqui."
+)
+
 ELEGIR_EXTRAS = "Elige los adicionales que quieres (los que ya vienen incluidos no se pueden quitar):"
 BOTON_LISTO_EXTRAS = "Listo, continuar"
 
