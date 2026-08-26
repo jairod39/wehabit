@@ -98,7 +98,7 @@ async def recibir_ciudad(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
 
     await query.edit_message_text(
-        f"Encontramos {len(propiedades)} opciones:",
+        textos.texto_resultados(len(propiedades)),
         reply_markup=teclados.teclado_lista_propiedades(propiedades),
     )
     return VER_LISTA
@@ -184,7 +184,7 @@ async def volver_a_lista(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
 
     await query.edit_message_text(
-        f"Encontramos {len(propiedades)} opciones:",
+        textos.texto_resultados(len(propiedades)),
         reply_markup=teclados.teclado_lista_propiedades(propiedades),
     )
     return VER_LISTA
