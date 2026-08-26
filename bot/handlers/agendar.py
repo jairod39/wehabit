@@ -34,7 +34,22 @@ from bot.seguro import llamar_con_limite, ErrorDelMotor
 ESPERANDO_FECHA_INICIO, ESPERANDO_FECHA_FIN, ESPERANDO_HORA, ESPERANDO_EXTRAS, ESPERANDO_CONFIRMACION = range(100, 105)
 
 
+async def _obtener_propiedad_segura(context, mensaje_error_para: callable):
+    """Trae la propiedad y avisa con un mensaje claro si ya no existe,
+    en vez de seguir con un None y tronar en silencio mas adelante."""
+    propiedad_id = context.user_data.get("agendando_propiedad_id")
+    propiedad = await llamar_con_limite(obtener_propiedad, propiedad_id)
+    if propiedad is None:
+        await mensaje_error_para(
+            "Esa propiedad ya no esta disponible (puede que la hayan "
+            "desactivado). Vuelve a buscar, por favor."
+        )
+        return None
+    return propiedad
+
+
 async def iniciar_agendamiento(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("RASTRO: iniciar_agendamiento fue llamada", flush=True)
     query = update.callback_query
     await query.answer()
     propiedad_id = query.data.split(":", 1)[1]
@@ -46,6 +61,7 @@ async def iniciar_agendamiento(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 async def recibir_fecha_inicio(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("RASTRO: recibir_fecha_inicio fue llamada", flush=True)
     texto = update.message.text.strip()
     try:
         fecha = datetime.strptime(texto, "%Y-%m-%d").date()
@@ -59,6 +75,7 @@ async def recibir_fecha_inicio(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 async def recibir_fecha_fin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("RASTRO: recibir_fecha_fin fue llamada", flush=True)
     texto = update.message.text.strip()
     try:
         fecha_fin = datetime.strptime(texto, "%Y-%m-%d").date()
@@ -77,6 +94,7 @@ async def recibir_fecha_fin(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def recibir_hora_visita(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("RASTRO: recibir_hora_visita fue llamada", flush=True)
     texto = update.message.text.strip()
     try:
         hora = datetime.strptime(texto, "%H:%M").time()
@@ -87,11 +105,11 @@ async def recibir_hora_visita(update: Update, context: ContextTypes.DEFAULT_TYPE
     context.user_data["hora_visita"] = hora.strftime("%H:%M")
 
     try:
-        propiedad = await llamar_con_limite(
-            obtener_propiedad, context.user_data["agendando_propiedad_id"]
-        )
+        propiedad = await _obtener_propiedad_segura(context, update.message.reply_text)
     except ErrorDelMotor as error:
         await update.message.reply_text(error.mensaje)
+        return ConversationHandler.END
+    if propiedad is None:
         return ConversationHandler.END
 
     await update.message.reply_text(
@@ -102,16 +120,18 @@ async def recibir_hora_visita(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def alternar_extra(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("RASTRO: alternar_extra fue llamada", flush=True)
     query = update.callback_query
     extra_id = query.data.split(":", 1)[1]
 
     try:
-        propiedad = await llamar_con_limite(
-            obtener_propiedad, context.user_data["agendando_propiedad_id"]
-        )
+        propiedad = await _obtener_propiedad_segura(context, query.message.reply_text)
     except ErrorDelMotor as error:
         await query.answer()
         await query.message.reply_text(error.mensaje)
+        return ConversationHandler.END
+    if propiedad is None:
+        await query.answer()
         return ConversationHandler.END
 
     if extra_id == "nada":
@@ -136,13 +156,14 @@ async def alternar_extra(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def mostrar_resumen(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("RASTRO: mostrar_resumen fue llamada", flush=True)
     query = update.callback_query
     try:
-        propiedad = await llamar_con_limite(
-            obtener_propiedad, context.user_data["agendando_propiedad_id"]
-        )
+        propiedad = await _obtener_propiedad_segura(context, query.message.reply_text)
     except ErrorDelMotor as error:
         await query.message.reply_text(error.mensaje)
+        return ConversationHandler.END
+    if propiedad is None:
         return ConversationHandler.END
 
     fecha_inicio = context.user_data["fecha_inicio"]
@@ -163,6 +184,7 @@ async def mostrar_resumen(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def confirmar_reserva(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("RASTRO: confirmar_reserva fue llamada", flush=True)
     query = update.callback_query
     await query.answer()
     decision = query.data.split(":", 1)[1]
@@ -172,11 +194,11 @@ async def confirmar_reserva(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
 
     try:
-        propiedad = await llamar_con_limite(
-            obtener_propiedad, context.user_data["agendando_propiedad_id"]
-        )
+        propiedad = await _obtener_propiedad_segura(context, query.message.reply_text)
     except ErrorDelMotor as error:
         await query.message.reply_text(error.mensaje)
+        return ConversationHandler.END
+    if propiedad is None:
         return ConversationHandler.END
 
     fecha_inicio = context.user_data["fecha_inicio"]
