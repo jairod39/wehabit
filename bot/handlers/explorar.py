@@ -211,6 +211,11 @@ async def mostrar_detalle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if propiedad.codigo_casa_arrendamiento
         else ""
     )
+    disponibilidad = (
+        f"\nDisponibilidad (segun el dueno): {propiedad.disponibilidad}\n"
+        if propiedad.disponibilidad
+        else ""
+    )
     nota_agendamiento = (
         ""
         if propiedad.tipo == TipoPropiedad.HABITACION
@@ -221,6 +226,7 @@ async def mostrar_detalle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"{propiedad.descripcion}\n\n"
         f"Precio base por noche: {propiedad.precio_base:,.0f}\n"
         f"{codigo}"
+        f"{disponibilidad}"
         f"\n{textos.NOTA_UBICACION_PENDIENTE}"
         f"{nota_agendamiento}"
         f"{etiqueta}"

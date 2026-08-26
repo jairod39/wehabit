@@ -63,14 +63,11 @@ def construir_aplicacion() -> Application:
                 CallbackQueryHandler(explorar.volver_a_ciudad, pattern="^volver:ciudad$"),
                 CallbackQueryHandler(explorar.volver_a_lista, pattern="^volver:lista$"),
             ],
-            agendar.ESPERANDO_FECHA_INICIO: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, agendar.recibir_fecha_inicio)
+            agendar.ESPERANDO_HORARIO: [
+                CallbackQueryHandler(agendar.recibir_horario, pattern="^horario:"),
             ],
-            agendar.ESPERANDO_FECHA_FIN: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, agendar.recibir_fecha_fin)
-            ],
-            agendar.ESPERANDO_HORA: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, agendar.recibir_hora_visita)
+            agendar.ESPERANDO_FECHA_ALTERNATIVA: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, agendar.recibir_fecha_alternativa)
             ],
             agendar.ESPERANDO_EXTRAS: [
                 CallbackQueryHandler(agendar.alternar_extra, pattern="^extra:"),

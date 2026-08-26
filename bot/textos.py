@@ -37,6 +37,28 @@ FECHA_FIN_ANTES_DE_INICIO = "La fecha final no puede ser antes de la inicial. In
 PEDIR_HORA_VISITA = "A que hora quieres visitar? (formato: HH:MM, ejemplo 15:30)"
 HORA_INVALIDA = "Esa hora no la entendi. Usa el formato HH:MM, por ejemplo 15:30 o 09:00."
 
+ELEGIR_HORARIO_VISITA = "Estos son los horarios disponibles para visitar. Elige uno:"
+
+SIN_HORARIOS_DEFINIDOS = (
+    "El dueno todavia no configuro horarios fijos para visitas.\n\n"
+    "Escribe la fecha y hora que te gustaria (formato: AAAA-MM-DD HH:MM, "
+    "ejemplo 2026-09-15 15:30). Quedara pendiente de confirmacion."
+)
+
+PEDIR_HORARIO_ALTERNATIVO = (
+    "Escribe la fecha y hora que propones (formato: AAAA-MM-DD HH:MM, "
+    "ejemplo 2026-09-15 15:30). Quedara pendiente de confirmacion."
+)
+
+HORARIO_ALTERNATIVO_INVALIDO = (
+    "No entendi ese formato. Usa AAAA-MM-DD HH:MM, ejemplo 2026-09-15 15:30."
+)
+
+AVISO_HORARIO_SUJETO_A_CONFIRMACION = (
+    "Ojo: este horario no estaba entre los que el dueno ya tenia definidos, "
+    "asi que queda PENDIENTE hasta que el confirme contigo directamente."
+)
+
 NOTA_UBICACION_PENDIENTE = (
     "La direccion exacta y el mapa se comparten cuando confirmes tu visita, "
     "para proteger la privacidad del dueno."

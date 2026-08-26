@@ -46,6 +46,8 @@ def _fila_a_propiedad(fila: dict, extras: list[Extra]) -> Propiedad:
         direccion_escrita=fila.get("direccion_escrita", ""),
         metodo_pago=fila.get("metodo_pago", ""),
         codigo_casa_arrendamiento=fila.get("codigo_casa_arrendamiento", ""),
+        horarios_visita=fila.get("horarios_visita", ""),
+        disponibilidad=fila.get("disponibilidad", ""),
         fotos=[f.strip() for f in fotos_texto.split(",") if f.strip()],
         activa=_texto_a_booleano(fila.get("activa", "")),
         extras_disponibles=extras,

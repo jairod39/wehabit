@@ -63,6 +63,8 @@ class Propiedad:
     direccion_escrita: str = ""  # direccion en texto, sirve sin necesidad de internet
     metodo_pago: str = ""  # texto informativo, el bot NUNCA cobra directamente
     codigo_casa_arrendamiento: str = ""  # codigo/referencia en la casa de arrendamiento, si aplica
+    horarios_visita: str = ""  # horarios que el dueno ofrece para VISITAS, ej "Viernes 15:00, Sabado 10:00"
+    disponibilidad: str = ""  # texto libre del dueno sobre disponibilidad de estadia (solo informativo)
     fotos: list[str] = field(default_factory=list)
     extras_disponibles: list[Extra] = field(default_factory=list)
     items_calificables: list[ItemCalificable] = field(default_factory=list)
@@ -79,13 +81,16 @@ class Propiedad:
 
 @dataclass
 class Reserva:
-    """Un agendamiento de visita/estadia. No maneja pagos, solo agenda."""
+    """
+    Una CITA DE VISITA para conocer la propiedad (no una reserva de
+    estadia). Las fechas de estadia (checkin/checkout) son un acuerdo
+    directo entre el dueno y el inquilino, no algo que agendamos aqui.
+    """
     id: str
     propiedad_id: str
     inquilino_id: str
-    fecha_inicio: date
-    fecha_fin: date
-    hora_visita: str = ""  # hora de la cita para conocer la propiedad, ej "15:30"
+    fecha_visita: date
+    hora_visita: str = ""  # ej "15:30"
     extras_elegidos: list[str] = field(default_factory=list)
     precio_total: float = 0.0
     estado: EstadoReserva = EstadoReserva.PENDIENTE

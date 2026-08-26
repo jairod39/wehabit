@@ -53,6 +53,22 @@ def teclado_lista_propiedades(propiedades: list[Propiedad]) -> InlineKeyboardMar
     return InlineKeyboardMarkup(filas)
 
 
+def teclado_horarios_visita(slots: list[tuple]) -> InlineKeyboardMarkup:
+    """slots es una lista de (fecha, hora). Cada boton codifica ambas
+    en el callback_data, separadas por '|'."""
+    from motor.horarios import formatear_fecha_corta
+
+    filas = [
+        [InlineKeyboardButton(
+            f"{formatear_fecha_corta(fecha)} - {hora}",
+            callback_data=f"horario:{fecha.isoformat()}|{hora}",
+        )]
+        for fecha, hora in slots
+    ]
+    filas.append([InlineKeyboardButton("Ninguno me sirve", callback_data="horario:otro")])
+    return InlineKeyboardMarkup(filas)
+
+
 def teclado_detalle_propiedad(propiedad: Propiedad) -> InlineKeyboardMarkup:
     filas = []
     # El agendamiento solo aplica a habitaciones, que se manejan directo con
