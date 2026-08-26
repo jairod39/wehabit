@@ -48,6 +48,11 @@ NOTA_SIN_AGENDAMIENTO = (
     "no agendamos la visita por aqui."
 )
 
+
+def texto_resultados(cantidad: int) -> str:
+    palabra = "opcion" if cantidad == 1 else "opciones"
+    return f"Encontramos {cantidad} {palabra}:"
+
 ELEGIR_EXTRAS = "Elige los adicionales que quieres (los que ya vienen incluidos no se pueden quitar):"
 BOTON_LISTO_EXTRAS = "Listo, continuar"
 
