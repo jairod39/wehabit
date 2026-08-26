@@ -16,6 +16,7 @@ def crear_reserva(
     inquilino_id: str,
     fecha_inicio: date,
     fecha_fin: date,
+    hora_visita: str,
     extras_elegidos: list[str],
     precio_total: float,
 ) -> str:
@@ -29,6 +30,7 @@ def crear_reserva(
             inquilino_id,
             fecha_inicio.isoformat(),
             fecha_fin.isoformat(),
+            hora_visita,
             ",".join(extras_elegidos),
             precio_total,
             EstadoReserva.PENDIENTE.value,
