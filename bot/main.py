@@ -47,25 +47,35 @@ def construir_aplicacion() -> Application:
         ],
         states={
             explorar.ELEGIR_PAIS: [
-                CallbackQueryHandler(explorar.recibir_tipo, pattern="^tipo:")
+                CallbackQueryHandler(explorar.recibir_tipo, pattern="^tipo:"),
+                CallbackQueryHandler(explorar.volver_a_menu_principal, pattern="^volver:menu$"),
             ],
             explorar.ELEGIR_CIUDAD: [
-                CallbackQueryHandler(explorar.recibir_pais, pattern="^pais:")
+                CallbackQueryHandler(explorar.recibir_pais, pattern="^pais:"),
+                CallbackQueryHandler(explorar.volver_a_tipo, pattern="^volver:tipo$"),
             ],
             explorar.VER_LISTA: [
                 CallbackQueryHandler(explorar.recibir_ciudad, pattern="^ciudad:"),
                 CallbackQueryHandler(explorar.mostrar_detalle, pattern="^ver:"),
                 CallbackQueryHandler(agendar.iniciar_agendamiento, pattern="^agendar:"),
                 CallbackQueryHandler(explorar.iniciar_exploracion, pattern="^menu:explorar$"),
+                CallbackQueryHandler(explorar.volver_a_pais, pattern="^volver:pais$"),
+                CallbackQueryHandler(explorar.volver_a_ciudad, pattern="^volver:ciudad$"),
+                CallbackQueryHandler(explorar.volver_a_lista, pattern="^volver:lista$"),
             ],
-            agendar.PEDIR_FIN: [
+            agendar.ESPERANDO_FECHA_INICIO: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, agendar.recibir_fecha_inicio)
             ],
-            agendar.ELEGIR_EXTRAS: [
+            agendar.ESPERANDO_FECHA_FIN: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, agendar.recibir_fecha_fin)
             ],
-            agendar.CONFIRMAR: [
+            agendar.ESPERANDO_HORA: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, agendar.recibir_hora_visita)
+            ],
+            agendar.ESPERANDO_EXTRAS: [
                 CallbackQueryHandler(agendar.alternar_extra, pattern="^extra:"),
+            ],
+            agendar.ESPERANDO_CONFIRMACION: [
                 CallbackQueryHandler(agendar.confirmar_reserva, pattern="^confirmar:"),
             ],
         },
