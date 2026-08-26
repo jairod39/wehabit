@@ -62,6 +62,7 @@ class Propiedad:
     ubicacion: str = ""  # link de Waze generado desde la ubicacion compartida en Telegram
     direccion_escrita: str = ""  # direccion en texto, sirve sin necesidad de internet
     metodo_pago: str = ""  # texto informativo, el bot NUNCA cobra directamente
+    codigo_casa_arrendamiento: str = ""  # codigo/referencia en la casa de arrendamiento, si aplica
     fotos: list[str] = field(default_factory=list)
     extras_disponibles: list[Extra] = field(default_factory=list)
     items_calificables: list[ItemCalificable] = field(default_factory=list)
@@ -84,6 +85,7 @@ class Reserva:
     inquilino_id: str
     fecha_inicio: date
     fecha_fin: date
+    hora_visita: str = ""  # hora de la cita para conocer la propiedad, ej "15:30"
     extras_elegidos: list[str] = field(default_factory=list)
     precio_total: float = 0.0
     estado: EstadoReserva = EstadoReserva.PENDIENTE
