@@ -45,6 +45,7 @@ def _fila_a_propiedad(fila: dict, extras: list[Extra]) -> Propiedad:
         ubicacion=fila.get("ubicacion", ""),
         direccion_escrita=fila.get("direccion_escrita", ""),
         metodo_pago=fila.get("metodo_pago", ""),
+        codigo_casa_arrendamiento=fila.get("codigo_casa_arrendamiento", ""),
         fotos=[f.strip() for f in fotos_texto.split(",") if f.strip()],
         activa=_texto_a_booleano(fila.get("activa", "")),
         extras_disponibles=extras,
@@ -56,15 +57,32 @@ def listar_propiedades(
     pais: str | None = None,
     ciudad: str | None = None,
 ) -> list[Propiedad]:
-    """Devuelve las propiedades activas, filtradas opcionalmente por tipo, pais y/o ciudad."""
+    """Devuelve las propiedades activas, filtradas opcionalmente por tipo, pais y/o ciudad.
+
+    IMPORTANTE: si una fila del Sheet tiene un dato mal puesto (precio en
+    blanco, un tipo mal escrito, etc), esa fila se ignora y se reporta en
+    los logs, pero NO tumba la busqueda completa. Antes, un solo error en
+    cualquier parte del Sheet rompia TODAS las busquedas silenciosamente.
+    """
     filas = leer_todas_las_filas("Propiedades")
     extras_por_propiedad = _cargar_extras_por_propiedad()
 
-    propiedades = [
-        _fila_a_propiedad(f, extras_por_propiedad.get(str(f["id"]), []))
-        for f in filas
-        if f.get("id")
-    ]
+    propiedades = []
+    for fila in filas:
+        id_fila = fila.get("id")
+        if not id_fila:
+            continue
+        try:
+            propiedad = _fila_a_propiedad(fila, extras_por_propiedad.get(str(id_fila), []))
+        except (ValueError, KeyError) as error:
+            print(
+                f"RASTRO: fila 'id={id_fila}' de Propiedades tiene un dato invalido "
+                f"y se ignoro ({error}). Revisa esa fila en el Sheet.",
+                flush=True,
+            )
+            continue
+        propiedades.append(propiedad)
+
     propiedades = [p for p in propiedades if p.activa]
 
     if tipo is not None:
