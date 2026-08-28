@@ -46,20 +46,22 @@ async def recibir_tipo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(textos.SIN_RESULTADOS)
         return ConversationHandler.END
 
+    # Si solo hay UN pais con resultados, no tiene sentido preguntar:
+    # nos saltamos directo a elegir ciudad dentro de ese pais.
+    if len(paises) == 1:
+        context.user_data["filtro_pais"] = paises[0]
+        return await _mostrar_ciudades(query, context, tipo_texto, paises[0])
+
     await query.edit_message_text(
         textos.ELEGIR_PAIS,
-        reply_markup=teclados.teclado_opciones(paises, "pais"),
+        reply_markup=teclados.teclado_opciones(paises, "pais", volver_callback="volver:tipo"),
     )
     return ELEGIR_CIUDAD
 
 
-async def recibir_pais(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    pais = query.data.split(":", 1)[1]
-    context.user_data["filtro_pais"] = pais
-
-    tipo_texto = context.user_data["filtro_tipo"]
+async def _mostrar_ciudades(query, context, tipo_texto: str, pais: str):
+    """Compartido entre recibir_tipo (cuando se salta el paso de pais) y
+    recibir_pais (cuando el usuario si elige uno explicitamente)."""
     try:
         propiedades = await llamar_con_limite(
             listar_propiedades, tipo=TipoPropiedad(tipo_texto), pais=pais
@@ -70,6 +72,15 @@ async def recibir_pais(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     ciudades = sorted({p.ciudad for p in propiedades if p.ciudad})
 
+    if not ciudades:
+        await query.edit_message_text(textos.SIN_RESULTADOS)
+        return ConversationHandler.END
+
+    # Si solo hay UNA ciudad con resultados, saltamos directo a la lista.
+    if len(ciudades) == 1:
+        context.user_data["filtro_ciudad"] = ciudades[0]
+        return await _mostrar_lista(query, context, tipo_texto, pais, ciudades[0])
+
     await query.edit_message_text(
         textos.ELEGIR_CIUDAD,
         reply_markup=teclados.teclado_opciones(ciudades, "ciudad", volver_callback="volver:pais"),
@@ -77,14 +88,7 @@ async def recibir_pais(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return VER_LISTA
 
 
-async def recibir_ciudad(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    ciudad = query.data.split(":", 1)[1]
-    context.user_data["filtro_ciudad"] = ciudad
-
-    tipo_texto = context.user_data["filtro_tipo"]
-    pais = context.user_data["filtro_pais"]
+async def _mostrar_lista(query, context, tipo_texto: str, pais: str, ciudad: str):
     try:
         propiedades = await llamar_con_limite(
             listar_propiedades, tipo=TipoPropiedad(tipo_texto), pais=pais, ciudad=ciudad
@@ -102,6 +106,25 @@ async def recibir_ciudad(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=teclados.teclado_lista_propiedades(propiedades),
     )
     return VER_LISTA
+
+
+async def recibir_pais(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    pais = query.data.split(":", 1)[1]
+    context.user_data["filtro_pais"] = pais
+    tipo_texto = context.user_data["filtro_tipo"]
+    return await _mostrar_ciudades(query, context, tipo_texto, pais)
+
+
+async def recibir_ciudad(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    ciudad = query.data.split(":", 1)[1]
+    context.user_data["filtro_ciudad"] = ciudad
+    tipo_texto = context.user_data["filtro_tipo"]
+    pais = context.user_data["filtro_pais"]
+    return await _mostrar_lista(query, context, tipo_texto, pais, ciudad)
 
 
 async def volver_a_menu_principal(update: Update, context: ContextTypes.DEFAULT_TYPE):
