@@ -14,6 +14,41 @@ BIENVENIDA = (
 BOTON_EXPLORAR = "Buscar alojamiento"
 BOTON_PUBLICAR = "Publicar mi propiedad"
 
+PUBLICAR_INTRO = (
+    "Vamos a publicar tu propiedad. Te voy preguntando un dato a la vez, "
+    "no necesitas tocar ninguna hoja de calculo.\n\n"
+    "Que tipo de alojamiento es?"
+)
+
+PEDIR_TITULO = "Ponle un titulo corto (ej: 'Habitacion amoblada cerca al metro')"
+PEDIR_DESCRIPCION = "Ahora describela: que tiene, como es, que la hace buena."
+PEDIR_PRECIO = "Cual es el precio por noche? (solo el numero, sin simbolos)"
+PRECIO_INVALIDO = "Eso no parece un numero. Escribe solo el precio, ej: 500000"
+PEDIR_PAIS = "En que pais esta ubicada?"
+PEDIR_CIUDAD = "En que ciudad?"
+PEDIR_DIRECCION = (
+    "Direccion (para mostrarla solo cuando alguien confirme una visita). "
+    "Si prefieres no darla todavia, escribe: -"
+)
+PEDIR_METODO_PAGO = "Como prefieres que te paguen? (ej: Transferencia, efectivo). Si no aplica, escribe: -"
+PEDIR_HORARIOS_VISITA_DUENO = (
+    "Que horarios ofreces para visitas? Formato: Dia HH:MM, separados por comas.\n"
+    "Ejemplo: Viernes 15:00, Sabado 10:00, Sabado 15:00\n"
+    "Si prefieres definirlos despues, escribe: -"
+)
+PEDIR_DISPONIBILIDAD = (
+    "Algo que quieras decir sobre disponibilidad de estadia? (opcional, texto libre). "
+    "Si no, escribe: -"
+)
+TEXTO_MUY_CORTO = "Eso quedo muy corto, dame un poco mas de detalle."
+
+CONFIRMAR_PUBLICACION = "Revisa que todo este bien antes de publicar:"
+PUBLICACION_CANCELADA = "Sin problema, no se publico nada. Puedes intentarlo de nuevo cuando quieras."
+PUBLICACION_EXITOSA = (
+    "Listo, tu propiedad ya esta publicada y visible en las busquedas. "
+    "Puedes escribirnos si necesitas editarla o darla de baja."
+)
+
 PUBLICAR_PROXIMAMENTE = (
     "Publicar tu propiedad directo desde el bot esta llegando pronto.\n"
     "Por ahora, escribenos y te ayudamos a cargarla manualmente."

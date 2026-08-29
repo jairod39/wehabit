@@ -18,6 +18,22 @@ def teclado_menu_principal() -> InlineKeyboardMarkup:
     ])
 
 
+def teclado_tipos_publicar() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(tipo.value.capitalize(), callback_data=f"publicar_tipo:{tipo.value}")]
+        for tipo in TipoPropiedad
+    ])
+
+
+def teclado_confirmar_publicacion() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("Si, publicar", callback_data="confirmar_publicar:si"),
+            InlineKeyboardButton("No, cancelar", callback_data="confirmar_publicar:no"),
+        ]
+    ])
+
+
 def teclado_volver_menu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(textos.BOTON_VOLVER, callback_data="menu:volver")],

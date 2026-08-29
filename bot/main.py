@@ -15,7 +15,7 @@ from telegram.ext import (
 )
 
 from motor.config import TELEGRAM_BOT_TOKEN, validar_configuracion
-from bot.handlers import start, explorar, agendar
+from bot.handlers import start, explorar, agendar, publicar
 from bot.keep_alive import mantener_vivo
 
 
@@ -79,9 +79,51 @@ def construir_aplicacion() -> Application:
         fallbacks=[CommandHandler("start", start.cmd_start)],
     )
 
+    conversacion_publicar = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(publicar.iniciar_publicacion, pattern="^menu:publicar$"),
+        ],
+        states={
+            publicar.ESPERANDO_TIPO: [
+                CallbackQueryHandler(publicar.recibir_tipo, pattern="^publicar_tipo:")
+            ],
+            publicar.ESPERANDO_TITULO: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_titulo)
+            ],
+            publicar.ESPERANDO_DESCRIPCION: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_descripcion)
+            ],
+            publicar.ESPERANDO_PRECIO: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_precio)
+            ],
+            publicar.ESPERANDO_PAIS: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_pais)
+            ],
+            publicar.ESPERANDO_CIUDAD: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_ciudad)
+            ],
+            publicar.ESPERANDO_DIRECCION: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_direccion)
+            ],
+            publicar.ESPERANDO_METODO_PAGO: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_metodo_pago)
+            ],
+            publicar.ESPERANDO_HORARIOS_VISITA: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_horarios_visita)
+            ],
+            publicar.ESPERANDO_DISPONIBILIDAD: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_disponibilidad)
+            ],
+            publicar.ESPERANDO_CONFIRMACION: [
+                CallbackQueryHandler(publicar.confirmar_publicacion, pattern="^confirmar_publicar:")
+            ],
+        },
+        fallbacks=[CommandHandler("start", start.cmd_start)],
+    )
+
     app.add_handler(conversacion)
+    app.add_handler(conversacion_publicar)
     app.add_handler(CommandHandler("probar", start.cmd_probar))
-    app.add_handler(CallbackQueryHandler(start.menu_publicar, pattern="^menu:publicar$"))
     app.add_handler(CallbackQueryHandler(start.menu_volver, pattern="^menu:volver$"))
     app.add_error_handler(manejar_error)
 

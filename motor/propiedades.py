@@ -5,8 +5,10 @@ solo le pide filas "crudas" a sheets_client y las convierte en
 objetos Propiedad, con sus extras ya cargados adentro.
 """
 
+import uuid
+
 from motor.models import Propiedad, Extra, TipoPropiedad
-from motor.sheets_client import leer_todas_las_filas
+from motor.sheets_client import leer_todas_las_filas, agregar_fila
 
 
 def _texto_a_booleano(valor) -> bool:
@@ -103,3 +105,47 @@ def obtener_propiedad(id_propiedad: str) -> Propiedad | None:
         if propiedad.id == id_propiedad:
             return propiedad
     return None
+
+
+def crear_propiedad(
+    tipo: TipoPropiedad,
+    titulo: str,
+    descripcion: str,
+    dueno_id: str,
+    precio_base: float,
+    pais: str,
+    ciudad: str,
+    direccion_escrita: str = "",
+    metodo_pago: str = "",
+    horarios_visita: str = "",
+    disponibilidad: str = "",
+) -> str:
+    """
+    Escribe una propiedad nueva en la pestana 'Propiedades' y devuelve
+    su id. El id es tecnico por ahora (invisible para el usuario, igual
+    que los demas); mas adelante, cuando se generen QRs para compartir,
+    se reemplaza por un identificador mas amigable.
+    """
+    id_nuevo = f"u{uuid.uuid4().hex[:8]}"
+    agregar_fila(
+        "Propiedades",
+        [
+            id_nuevo,
+            tipo.value,
+            titulo,
+            descripcion,
+            dueno_id,
+            precio_base,
+            pais,
+            ciudad,
+            "",  # ubicacion (link de mapa) - se agrega mas adelante
+            direccion_escrita,
+            metodo_pago,
+            "",  # codigo_casa_arrendamiento - no aplica a publicaciones directas
+            horarios_visita,
+            disponibilidad,
+            "",  # fotos - se agrega mas adelante
+            "TRUE",
+        ],
+    )
+    return id_nuevo

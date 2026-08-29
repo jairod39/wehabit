@@ -43,16 +43,8 @@ async def cmd_probar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-async def menu_publicar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    await query.edit_message_text(
-        textos.PUBLICAR_PROXIMAMENTE, reply_markup=teclados.teclado_volver_menu()
-    )
-
-
 async def menu_volver(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Vuelve al menu principal desde una pantalla sin salida (ej. 'publicar')."""
+    """Vuelve al menu principal desde una pantalla sin salida."""
     query = update.callback_query
     await query.answer()
     await query.edit_message_text(
