@@ -13,6 +13,11 @@ BIENVENIDA = (
 
 BOTON_EXPLORAR = "Buscar alojamiento"
 BOTON_PUBLICAR = "Publicar mi propiedad"
+BOTON_MIS_PUBLICACIONES = "Mis publicaciones"
+
+MIS_PUBLICACIONES = "Estas son tus propiedades. Toca una para verla o cambiar su estado:"
+SIN_PUBLICACIONES_PROPIAS = "Todavia no tienes ninguna propiedad publicada."
+PUBLICACION_NO_ENCONTRADA = "No encontramos esa publicacion (puede que ya no exista)."
 
 PUBLICAR_INTRO = (
     "Vamos a publicar tu propiedad. Te voy preguntando un dato a la vez, "
@@ -21,6 +26,10 @@ PUBLICAR_INTRO = (
 )
 
 PEDIR_TITULO = "Ponle un titulo corto (ej: 'Habitacion amoblada cerca al metro')"
+PEDIR_DESTACADO = (
+    "Dame UN detalle corto que la haga especial (ej: 'cerca al metro', "
+    "'con balcon', 'recien remodelada'). Con eso arma el titulo automatico."
+)
 PEDIR_DESCRIPCION = "Ahora describela: que tiene, como es, que la hace buena."
 PEDIR_PRECIO = "Cual es el precio por noche? (solo el numero, sin simbolos)"
 PRECIO_INVALIDO = "Eso no parece un numero. Escribe solo el precio, ej: 500000"

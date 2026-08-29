@@ -8,7 +8,7 @@ objetos Propiedad, con sus extras ya cargados adentro.
 import uuid
 
 from motor.models import Propiedad, Extra, TipoPropiedad
-from motor.sheets_client import leer_todas_las_filas, agregar_fila
+from motor.sheets_client import leer_todas_las_filas, agregar_fila, actualizar_celda_por_id
 
 
 def _texto_a_booleano(valor) -> bool:
@@ -149,3 +149,42 @@ def crear_propiedad(
         ],
     )
     return id_nuevo
+
+
+def listar_propiedades_de_dueno(dueno_id: str) -> list[Propiedad]:
+    """
+    Todas las propiedades de un dueno especifico, ACTIVAS E INACTIVAS
+    (a diferencia de listar_propiedades, que solo trae las activas).
+    Sirve para que el dueno vea y controle todo lo suyo, incluido lo
+    que tiene apagado por ahora.
+    """
+    filas = leer_todas_las_filas("Propiedades")
+    extras_por_propiedad = _cargar_extras_por_propiedad()
+
+    propiedades = []
+    for fila in filas:
+        if str(fila.get("dueno_id", "")) != str(dueno_id):
+            continue
+        id_fila = fila.get("id")
+        if not id_fila:
+            continue
+        try:
+            propiedad = _fila_a_propiedad(fila, extras_por_propiedad.get(str(id_fila), []))
+        except (ValueError, KeyError) as error:
+            print(
+                f"RASTRO: fila 'id={id_fila}' de Propiedades tiene un dato invalido "
+                f"y se ignoro ({error}).",
+                flush=True,
+            )
+            continue
+        propiedades.append(propiedad)
+
+    return propiedades
+
+
+def cambiar_estado_propiedad(id_propiedad: str, activa: bool) -> bool:
+    """Activa o desactiva una propiedad sin tocar ningun otro dato suyo.
+    Devuelve False si no encontro la propiedad."""
+    return actualizar_celda_por_id(
+        "Propiedades", id_propiedad, "id", "activa", "TRUE" if activa else "FALSE"
+    )

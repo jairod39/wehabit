@@ -15,6 +15,7 @@ def teclado_menu_principal() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(textos.BOTON_EXPLORAR, callback_data="menu:explorar")],
         [InlineKeyboardButton(textos.BOTON_PUBLICAR, callback_data="menu:publicar")],
+        [InlineKeyboardButton(textos.BOTON_MIS_PUBLICACIONES, callback_data="menu:mispublicaciones")],
     ])
 
 

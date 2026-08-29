@@ -53,3 +53,25 @@ def agregar_fila(nombre_pestana: str, valores: list) -> None:
     """Agrega una fila nueva al final de una pestana."""
     pestana = obtener_pestana(nombre_pestana)
     pestana.append_row(valores, value_input_option="USER_ENTERED")
+
+
+def actualizar_celda_por_id(
+    nombre_pestana: str, id_valor: str, columna_id: str, columna_objetivo: str, valor_nuevo
+) -> bool:
+    """Busca la fila cuyo 'columna_id' coincide con id_valor, y le
+    actualiza SOLO la celda de 'columna_objetivo'. Devuelve False si no
+    encontro la fila (para que quien llama pueda avisar, no fallar en
+    silencio)."""
+    pestana = obtener_pestana(nombre_pestana)
+    encabezados = pestana.row_values(1)
+    if columna_id not in encabezados or columna_objetivo not in encabezados:
+        return False
+    col_id_idx = encabezados.index(columna_id) + 1
+    col_objetivo_idx = encabezados.index(columna_objetivo) + 1
+
+    valores_columna_id = pestana.col_values(col_id_idx)
+    for fila_num, valor in enumerate(valores_columna_id[1:], start=2):
+        if str(valor) == str(id_valor):
+            pestana.update_cell(fila_num, col_objetivo_idx, valor_nuevo)
+            return True
+    return False

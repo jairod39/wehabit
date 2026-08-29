@@ -15,7 +15,7 @@ from telegram.ext import (
 )
 
 from motor.config import TELEGRAM_BOT_TOKEN, validar_configuracion
-from bot.handlers import start, explorar, agendar, publicar
+from bot.handlers import start, explorar, agendar, publicar, mispublicaciones
 from bot.keep_alive import mantener_vivo
 
 
@@ -87,20 +87,20 @@ def construir_aplicacion() -> Application:
             publicar.ESPERANDO_TIPO: [
                 CallbackQueryHandler(publicar.recibir_tipo, pattern="^publicar_tipo:")
             ],
-            publicar.ESPERANDO_TITULO: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_titulo)
+            publicar.ESPERANDO_PAIS: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_pais)
+            ],
+            publicar.ESPERANDO_CIUDAD: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_ciudad)
+            ],
+            publicar.ESPERANDO_DESTACADO: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_destacado)
             ],
             publicar.ESPERANDO_DESCRIPCION: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_descripcion)
             ],
             publicar.ESPERANDO_PRECIO: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_precio)
-            ],
-            publicar.ESPERANDO_PAIS: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_pais)
-            ],
-            publicar.ESPERANDO_CIUDAD: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_ciudad)
             ],
             publicar.ESPERANDO_DIRECCION: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_direccion)
@@ -125,6 +125,11 @@ def construir_aplicacion() -> Application:
     app.add_handler(conversacion_publicar)
     app.add_handler(CommandHandler("probar", start.cmd_probar))
     app.add_handler(CallbackQueryHandler(start.menu_volver, pattern="^menu:volver$"))
+    app.add_handler(
+        CallbackQueryHandler(mispublicaciones.mostrar_mis_publicaciones, pattern="^menu:mispublicaciones$")
+    )
+    app.add_handler(CallbackQueryHandler(mispublicaciones.ver_publicacion, pattern="^verpub:"))
+    app.add_handler(CallbackQueryHandler(mispublicaciones.alternar_publicacion, pattern="^togglepub:"))
     app.add_error_handler(manejar_error)
 
     return app

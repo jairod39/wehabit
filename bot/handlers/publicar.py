@@ -2,6 +2,11 @@
 Conversacion para que un dueno PUBLIQUE su propiedad hablando con el bot,
 sin tocar el Google Sheet a mano. Al final, escribe la fila directamente.
 
+El TITULO no se pide como texto libre: se arma automaticamente a partir
+de tipo + ciudad + un detalle corto que el dueno da. Esto estandariza el
+formato de todas las publicaciones (mismo orden, misma estructura), lo
+que ademas hace la busqueda mas predecible para quien consulta.
+
 Es una ConversationHandler SEPARADA de la de explorar/agendar (no comparte
 el mismo diccionario de estados), asi que sus numeros de estado no tienen
 que coordinarse con los de esos otros modulos.
@@ -17,11 +22,11 @@ from bot.seguro import llamar_con_limite, ErrorDelMotor
 
 (
     ESPERANDO_TIPO,
-    ESPERANDO_TITULO,
-    ESPERANDO_DESCRIPCION,
-    ESPERANDO_PRECIO,
     ESPERANDO_PAIS,
     ESPERANDO_CIUDAD,
+    ESPERANDO_DESTACADO,
+    ESPERANDO_DESCRIPCION,
+    ESPERANDO_PRECIO,
     ESPERANDO_DIRECCION,
     ESPERANDO_METODO_PAGO,
     ESPERANDO_HORARIOS_VISITA,
@@ -52,16 +57,42 @@ async def recibir_tipo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     tipo_texto = query.data.split(":", 1)[1]
     context.user_data["nueva_propiedad"]["tipo"] = tipo_texto
-    await query.message.reply_text(textos.PEDIR_TITULO)
-    return ESPERANDO_TITULO
+    await query.message.reply_text(textos.PEDIR_PAIS)
+    return ESPERANDO_PAIS
 
 
-async def recibir_titulo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def recibir_pais(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = update.message.text.strip()
     if len(texto) < 3:
         await update.message.reply_text(textos.TEXTO_MUY_CORTO)
-        return ESPERANDO_TITULO
-    context.user_data["nueva_propiedad"]["titulo"] = texto
+        return ESPERANDO_PAIS
+    context.user_data["nueva_propiedad"]["pais"] = texto
+    await update.message.reply_text(textos.PEDIR_CIUDAD)
+    return ESPERANDO_CIUDAD
+
+
+async def recibir_ciudad(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    texto = update.message.text.strip()
+    if len(texto) < 3:
+        await update.message.reply_text(textos.TEXTO_MUY_CORTO)
+        return ESPERANDO_CIUDAD
+    context.user_data["nueva_propiedad"]["ciudad"] = texto
+    await update.message.reply_text(textos.PEDIR_DESTACADO)
+    return ESPERANDO_DESTACADO
+
+
+async def recibir_destacado(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    texto = update.message.text.strip()
+    if len(texto) < 3:
+        await update.message.reply_text(textos.TEXTO_MUY_CORTO)
+        return ESPERANDO_DESTACADO
+
+    datos = context.user_data["nueva_propiedad"]
+    tipo_legible = datos["tipo"].capitalize()
+    # Titulo SIEMPRE con la misma estructura: Tipo en Ciudad - detalle.
+    # Esto estandariza el formato de todas las publicaciones.
+    datos["titulo"] = f"{tipo_legible} en {datos['ciudad']} - {texto}"
+
     await update.message.reply_text(textos.PEDIR_DESCRIPCION)
     return ESPERANDO_DESCRIPCION
 
@@ -82,26 +113,6 @@ async def recibir_precio(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(textos.PRECIO_INVALIDO)
         return ESPERANDO_PRECIO
     context.user_data["nueva_propiedad"]["precio_base"] = float(texto)
-    await update.message.reply_text(textos.PEDIR_PAIS)
-    return ESPERANDO_PAIS
-
-
-async def recibir_pais(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    texto = update.message.text.strip()
-    if len(texto) < 3:
-        await update.message.reply_text(textos.TEXTO_MUY_CORTO)
-        return ESPERANDO_PAIS
-    context.user_data["nueva_propiedad"]["pais"] = texto
-    await update.message.reply_text(textos.PEDIR_CIUDAD)
-    return ESPERANDO_CIUDAD
-
-
-async def recibir_ciudad(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    texto = update.message.text.strip()
-    if len(texto) < 3:
-        await update.message.reply_text(textos.TEXTO_MUY_CORTO)
-        return ESPERANDO_CIUDAD
-    context.user_data["nueva_propiedad"]["ciudad"] = texto
     await update.message.reply_text(textos.PEDIR_DIRECCION)
     return ESPERANDO_DIRECCION
 
@@ -140,8 +151,7 @@ async def recibir_disponibilidad(update: Update, context: ContextTypes.DEFAULT_T
     datos = context.user_data["nueva_propiedad"]
     resumen = (
         f"{textos.CONFIRMAR_PUBLICACION}\n\n"
-        f"Tipo: {datos['tipo']}\n"
-        f"Titulo: {datos['titulo']}\n"
+        f"Titulo (generado automaticamente): {datos['titulo']}\n"
         f"Descripcion: {datos['descripcion']}\n"
         f"Precio por noche: {datos['precio_base']:,.0f}\n"
         f"Pais: {datos['pais']}\n"
