@@ -26,10 +26,8 @@ PUBLICAR_INTRO = (
 )
 
 PEDIR_TITULO = "Ponle un titulo corto (ej: 'Habitacion amoblada cerca al metro')"
-PEDIR_DESTACADO = (
-    "Dame UN detalle corto que la haga especial (ej: 'cerca al metro', "
-    "'con balcon', 'recien remodelada'). Con eso arma el titulo automatico."
-)
+ELEGIR_DESTACADO = "Elige lo que mas destaca de tu propiedad (o escribe la tuya si no esta en la lista):"
+PEDIR_DESTACADO = "Escribe el detalle que quieras resaltar (ej: 'con vista al mar')."
 PEDIR_DESCRIPCION = "Ahora describela: que tiene, como es, que la hace buena."
 PEDIR_PRECIO = "Cual es el precio por noche? (solo el numero, sin simbolos)"
 PRECIO_INVALIDO = "Eso no parece un numero. Escribe solo el precio, ej: 500000"

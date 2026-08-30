@@ -25,6 +25,7 @@ from bot.seguro import llamar_con_limite, ErrorDelMotor
     ESPERANDO_PAIS,
     ESPERANDO_CIUDAD,
     ESPERANDO_DESTACADO,
+    ESPERANDO_DESTACADO_OTRO,
     ESPERANDO_DESCRIPCION,
     ESPERANDO_PRECIO,
     ESPERANDO_DIRECCION,
@@ -32,7 +33,7 @@ from bot.seguro import llamar_con_limite, ErrorDelMotor
     ESPERANDO_HORARIOS_VISITA,
     ESPERANDO_DISPONIBILIDAD,
     ESPERANDO_CONFIRMACION,
-) = range(200, 211)
+) = range(200, 212)
 
 SALTAR = {"-", "ninguna", "ninguno", "no", "skip"}
 
@@ -77,22 +78,45 @@ async def recibir_ciudad(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(textos.TEXTO_MUY_CORTO)
         return ESPERANDO_CIUDAD
     context.user_data["nueva_propiedad"]["ciudad"] = texto
-    await update.message.reply_text(textos.PEDIR_DESTACADO)
+    await update.message.reply_text(
+        textos.ELEGIR_DESTACADO, reply_markup=teclados.teclado_destacados()
+    )
     return ESPERANDO_DESTACADO
 
 
-async def recibir_destacado(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def _construir_titulo(context: ContextTypes.DEFAULT_TYPE, detalle: str) -> None:
+    """Construye el titulo SIEMPRE con la misma estructura (Tipo en
+    Ciudad - detalle), sin importar si el detalle vino del menu o fue
+    escrito a mano. Esto estandariza el formato de todas las
+    publicaciones para que la busqueda sea predecible."""
+    datos = context.user_data["nueva_propiedad"]
+    tipo_legible = datos["tipo"].capitalize()
+    datos["titulo"] = f"{tipo_legible} en {datos['ciudad']} - {detalle}"
+    datos["destacado"] = detalle
+
+
+async def recibir_destacado_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    dato = query.data.split(":", 1)[1]
+
+    if dato == "otro":
+        await query.message.reply_text(textos.PEDIR_DESTACADO)
+        return ESPERANDO_DESTACADO_OTRO
+
+    detalle = teclados.DESTACADOS_PREDEFINIDOS[int(dato)]
+    _construir_titulo(context, detalle)
+    await query.message.reply_text(textos.PEDIR_DESCRIPCION)
+    return ESPERANDO_DESCRIPCION
+
+
+async def recibir_destacado_otro(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = update.message.text.strip()
     if len(texto) < 3:
         await update.message.reply_text(textos.TEXTO_MUY_CORTO)
-        return ESPERANDO_DESTACADO
+        return ESPERANDO_DESTACADO_OTRO
 
-    datos = context.user_data["nueva_propiedad"]
-    tipo_legible = datos["tipo"].capitalize()
-    # Titulo SIEMPRE con la misma estructura: Tipo en Ciudad - detalle.
-    # Esto estandariza el formato de todas las publicaciones.
-    datos["titulo"] = f"{tipo_legible} en {datos['ciudad']} - {texto}"
-
+    _construir_titulo(context, texto)
     await update.message.reply_text(textos.PEDIR_DESCRIPCION)
     return ESPERANDO_DESCRIPCION
 

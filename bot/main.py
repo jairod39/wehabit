@@ -94,7 +94,10 @@ def construir_aplicacion() -> Application:
                 MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_ciudad)
             ],
             publicar.ESPERANDO_DESTACADO: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_destacado)
+                CallbackQueryHandler(publicar.recibir_destacado_menu, pattern="^destacado:")
+            ],
+            publicar.ESPERANDO_DESTACADO_OTRO: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_destacado_otro)
             ],
             publicar.ESPERANDO_DESCRIPCION: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_descripcion)

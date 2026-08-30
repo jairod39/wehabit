@@ -10,6 +10,21 @@ from motor.models import Propiedad, TipoPropiedad
 from motor.precios import es_full
 from bot import textos
 
+# Lista fija de detalles destacados que el dueno puede elegir al publicar.
+# Fija a proposito: asi el dato queda ESTANDARIZADO (una etiqueta real,
+# no texto libre), lo que permite mas adelante armar un buscador preciso
+# por esas mismas etiquetas, sin depender de IA ni de texto libre.
+DESTACADOS_PREDEFINIDOS = [
+    "Cerca al metro",
+    "Con balcon",
+    "Recien remodelada",
+    "Amoblada",
+    "Con parqueadero",
+    "Wifi incluido",
+    "Con bano privado",
+    "Vista panoramica",
+]
+
 
 def teclado_menu_principal() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
@@ -17,6 +32,15 @@ def teclado_menu_principal() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(textos.BOTON_PUBLICAR, callback_data="menu:publicar")],
         [InlineKeyboardButton(textos.BOTON_MIS_PUBLICACIONES, callback_data="menu:mispublicaciones")],
     ])
+
+
+def teclado_destacados() -> InlineKeyboardMarkup:
+    filas = [
+        [InlineKeyboardButton(t, callback_data=f"destacado:{i}")]
+        for i, t in enumerate(DESTACADOS_PREDEFINIDOS)
+    ]
+    filas.append([InlineKeyboardButton("Otro (escribir el mio)", callback_data="destacado:otro")])
+    return InlineKeyboardMarkup(filas)
 
 
 def teclado_tipos_publicar() -> InlineKeyboardMarkup:
