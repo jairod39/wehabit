@@ -10,6 +10,17 @@ from motor.models import Propiedad, TipoPropiedad
 from motor.precios import es_full
 from bot import textos
 
+# Lista fija de paises: dato geografico real, no cambia, no necesita IA
+# ni ninguna consulta externa. Cubre los mercados donde WeHabit opera
+# hoy; agregar mas paises despues es solo sumar lineas a esta lista.
+PAISES_PUBLICAR = [
+    "Colombia", "Mexico", "Argentina", "Peru", "Chile", "Ecuador",
+    "Venezuela", "Bolivia", "Paraguay", "Uruguay", "Panama",
+    "Costa Rica", "Guatemala", "Honduras", "El Salvador", "Nicaragua",
+    "Republica Dominicana", "Cuba", "Puerto Rico", "Espana",
+    "Estados Unidos", "Canada", "Brasil", "Portugal",
+]
+
 # Lista fija de detalles destacados que el dueno puede elegir al publicar.
 # Fija a proposito: asi el dato queda ESTANDARIZADO (una etiqueta real,
 # no texto libre), lo que permite mas adelante armar un buscador preciso
@@ -24,6 +35,46 @@ DESTACADOS_PREDEFINIDOS = [
     "Con bano privado",
     "Vista panoramica",
 ]
+
+
+def teclado_paginado(
+    opciones: list[str], prefijo: str, pagina: int = 0, por_pagina: int = 8,
+    boton_extra: tuple[str, str] | None = None,
+) -> InlineKeyboardMarkup:
+    """
+    Teclado generico con paginacion: muestra `por_pagina` opciones a la
+    vez, con botones 'Anterior'/'Siguiente' cuando hace falta. Se usa
+    para listas largas como paises o ciudades, para no saturar una sola
+    pantalla de Telegram con decenas de botones de una.
+    """
+    inicio = pagina * por_pagina
+    lote = opciones[inicio:inicio + por_pagina]
+    filas = [[InlineKeyboardButton(op, callback_data=f"{prefijo}:{op}")] for op in lote]
+
+    navegacion = []
+    if pagina > 0:
+        navegacion.append(InlineKeyboardButton("<< Anterior", callback_data=f"{prefijo}_pag:{pagina-1}"))
+    if inicio + por_pagina < len(opciones):
+        navegacion.append(InlineKeyboardButton("Siguiente >>", callback_data=f"{prefijo}_pag:{pagina+1}"))
+    if navegacion:
+        filas.append(navegacion)
+
+    if boton_extra:
+        texto_extra, callback_extra = boton_extra
+        filas.append([InlineKeyboardButton(texto_extra, callback_data=callback_extra)])
+
+    return InlineKeyboardMarkup(filas)
+
+
+def teclado_paises_publicar(pagina: int = 0) -> InlineKeyboardMarkup:
+    return teclado_paginado(PAISES_PUBLICAR, "paispub", pagina)
+
+
+def teclado_ciudades_publicar(ciudades: list[str], pagina: int = 0) -> InlineKeyboardMarkup:
+    return teclado_paginado(
+        ciudades, "ciudadpub", pagina,
+        boton_extra=("Mi ciudad no esta en la lista", "ciudadpub_otra:1"),
+    )
 
 
 def teclado_menu_principal() -> InlineKeyboardMarkup:

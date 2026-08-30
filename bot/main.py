@@ -88,10 +88,16 @@ def construir_aplicacion() -> Application:
                 CallbackQueryHandler(publicar.recibir_tipo, pattern="^publicar_tipo:")
             ],
             publicar.ESPERANDO_PAIS: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_pais)
+                CallbackQueryHandler(publicar.paginar_paises, pattern="^paispub_pag:"),
+                CallbackQueryHandler(publicar.recibir_pais, pattern="^paispub:"),
             ],
             publicar.ESPERANDO_CIUDAD: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_ciudad)
+                CallbackQueryHandler(publicar.paginar_ciudades, pattern="^ciudadpub_pag:"),
+                CallbackQueryHandler(publicar.pedir_ciudad_otra, pattern="^ciudadpub_otra:"),
+                CallbackQueryHandler(publicar.recibir_ciudad, pattern="^ciudadpub:"),
+            ],
+            publicar.ESPERANDO_CIUDAD_OTRA: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_ciudad_otra)
             ],
             publicar.ESPERANDO_DESTACADO: [
                 CallbackQueryHandler(publicar.recibir_destacado_menu, pattern="^destacado:")

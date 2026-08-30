@@ -1,22 +1,31 @@
 """
 Conversacion para que un dueno PUBLIQUE su propiedad hablando con el bot,
-sin tocar el Google Sheet a mano. Al final, escribe la fila directamente.
+sin tocar el Google Sheet a mano y CASI SIN escribir texto libre.
 
-El TITULO no se pide como texto libre: se arma automaticamente a partir
-de tipo + ciudad + un detalle corto que el dueno da. Esto estandariza el
-formato de todas las publicaciones (mismo orden, misma estructura), lo
-que ademas hace la busqueda mas predecible para quien consulta.
+Filosofia: todo lo que se pueda estandarizar con un menu, se pide con
+un menu (tipo, pais, ciudad, detalle destacado). Solo se deja texto
+libre donde de verdad no hay forma de estandarizarlo (descripcion,
+precio como numero, direccion, metodo de pago).
 
-Es una ConversationHandler SEPARADA de la de explorar/agendar (no comparte
-el mismo diccionario de estados), asi que sus numeros de estado no tienen
-que coordinarse con los de esos otros modulos.
+- PAIS: lista fija (dato geografico real, no cambia).
+- CIUDAD: se arma con las ciudades que YA existen en nuestros datos
+  para ese pais. Si la ciudad no esta, se agrega la primera vez y
+  desde ahi queda disponible en el menu para todos los que publiquen
+  despues en ese mismo pais. Asi el "menu" crece solo con datos reales,
+  sin depender de una base de datos externa de todas las ciudades del
+  mundo (eso no existe como algo manejable en botones).
+- TITULO: no se pide como texto libre, se arma solo a partir de
+  tipo + ciudad + detalle destacado (elegido de un menu tambien).
+
+Es una ConversationHandler SEPARADA de la de explorar/agendar (no
+comparte el mismo diccionario de estados).
 """
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
 from motor.models import TipoPropiedad
-from motor.propiedades import crear_propiedad
+from motor.propiedades import crear_propiedad, listar_ciudades_de_pais
 from bot import textos, teclados
 from bot.seguro import llamar_con_limite, ErrorDelMotor
 
@@ -24,6 +33,7 @@ from bot.seguro import llamar_con_limite, ErrorDelMotor
     ESPERANDO_TIPO,
     ESPERANDO_PAIS,
     ESPERANDO_CIUDAD,
+    ESPERANDO_CIUDAD_OTRA,
     ESPERANDO_DESTACADO,
     ESPERANDO_DESTACADO_OTRO,
     ESPERANDO_DESCRIPCION,
@@ -33,7 +43,7 @@ from bot.seguro import llamar_con_limite, ErrorDelMotor
     ESPERANDO_HORARIOS_VISITA,
     ESPERANDO_DISPONIBILIDAD,
     ESPERANDO_CONFIRMACION,
-) = range(200, 212)
+) = range(200, 213)
 
 SALTAR = {"-", "ninguna", "ninguno", "no", "skip"}
 
@@ -58,25 +68,83 @@ async def recibir_tipo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     tipo_texto = query.data.split(":", 1)[1]
     context.user_data["nueva_propiedad"]["tipo"] = tipo_texto
-    await query.message.reply_text(textos.PEDIR_PAIS)
+    await query.message.reply_text(
+        textos.ELEGIR_PAIS, reply_markup=teclados.teclado_paises_publicar()
+    )
     return ESPERANDO_PAIS
 
 
+async def paginar_paises(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    pagina = int(query.data.split(":", 1)[1])
+    await query.edit_message_reply_markup(reply_markup=teclados.teclado_paises_publicar(pagina))
+    return ESPERANDO_PAIS
+
+
+async def _mostrar_ciudades(mensaje_para_editar, context, pais: str, pagina: int = 0):
+    try:
+        ciudades = await llamar_con_limite(listar_ciudades_de_pais, pais)
+    except ErrorDelMotor as error:
+        await mensaje_para_editar.reply_text(error.mensaje)
+        return ConversationHandler.END
+
+    await mensaje_para_editar.reply_text(
+        textos.ELEGIR_CIUDAD, reply_markup=teclados.teclado_ciudades_publicar(ciudades, pagina)
+    )
+    return ESPERANDO_CIUDAD
+
+
 async def recibir_pais(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    texto = update.message.text.strip()
-    if len(texto) < 3:
-        await update.message.reply_text(textos.TEXTO_MUY_CORTO)
-        return ESPERANDO_PAIS
-    context.user_data["nueva_propiedad"]["pais"] = texto
-    await update.message.reply_text(textos.PEDIR_CIUDAD)
+    query = update.callback_query
+    await query.answer()
+    pais = query.data.split(":", 1)[1]
+    context.user_data["nueva_propiedad"]["pais"] = pais
+    return await _mostrar_ciudades(query.message, context, pais)
+
+
+async def paginar_ciudades(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    pagina = int(query.data.split(":", 1)[1])
+    pais = context.user_data["nueva_propiedad"]["pais"]
+    try:
+        ciudades = await llamar_con_limite(listar_ciudades_de_pais, pais)
+    except ErrorDelMotor as error:
+        await query.message.reply_text(error.mensaje)
+        return ConversationHandler.END
+    await query.edit_message_reply_markup(
+        reply_markup=teclados.teclado_ciudades_publicar(ciudades, pagina)
+    )
     return ESPERANDO_CIUDAD
 
 
 async def recibir_ciudad(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    ciudad = query.data.split(":", 1)[1]
+    context.user_data["nueva_propiedad"]["ciudad"] = ciudad
+    await query.message.reply_text(
+        textos.ELEGIR_DESTACADO, reply_markup=teclados.teclado_destacados()
+    )
+    return ESPERANDO_DESTACADO
+
+
+async def pedir_ciudad_otra(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.message.reply_text(textos.PEDIR_CIUDAD)
+    return ESPERANDO_CIUDAD_OTRA
+
+
+async def recibir_ciudad_otra(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = update.message.text.strip()
     if len(texto) < 3:
         await update.message.reply_text(textos.TEXTO_MUY_CORTO)
-        return ESPERANDO_CIUDAD
+        return ESPERANDO_CIUDAD_OTRA
+    # Esta ciudad queda grabada al publicar (va en la fila de la
+    # propiedad), asi que la proxima persona que publique en este mismo
+    # pais ya la va a ver en el menu, sin tener que escribirla de nuevo.
     context.user_data["nueva_propiedad"]["ciudad"] = texto
     await update.message.reply_text(
         textos.ELEGIR_DESTACADO, reply_markup=teclados.teclado_destacados()
@@ -87,8 +155,7 @@ async def recibir_ciudad(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def _construir_titulo(context: ContextTypes.DEFAULT_TYPE, detalle: str) -> None:
     """Construye el titulo SIEMPRE con la misma estructura (Tipo en
     Ciudad - detalle), sin importar si el detalle vino del menu o fue
-    escrito a mano. Esto estandariza el formato de todas las
-    publicaciones para que la busqueda sea predecible."""
+    escrito a mano."""
     datos = context.user_data["nueva_propiedad"]
     tipo_legible = datos["tipo"].capitalize()
     datos["titulo"] = f"{tipo_legible} en {datos['ciudad']} - {detalle}"

@@ -151,6 +151,22 @@ def crear_propiedad(
     return id_nuevo
 
 
+def listar_ciudades_de_pais(pais: str) -> list[str]:
+    """
+    Ciudades que YA existen en nuestros datos para un pais (de
+    cualquier propiedad, activa o no). Sirve para armar el menu de
+    ciudades sin depender de texto libre: si la ciudad no esta en la
+    lista, se agrega la primera vez y desde ahi queda disponible para
+    todos los que publiquen despues en ese mismo pais.
+    """
+    filas = leer_todas_las_filas("Propiedades")
+    return sorted({
+        f.get("ciudad", "").strip()
+        for f in filas
+        if f.get("pais", "").strip().lower() == pais.strip().lower() and f.get("ciudad", "").strip()
+    })
+
+
 def listar_propiedades_de_dueno(dueno_id: str) -> list[Propiedad]:
     """
     Todas las propiedades de un dueno especifico, ACTIVAS E INACTIVAS
