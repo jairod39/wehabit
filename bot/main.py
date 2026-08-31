@@ -137,6 +137,7 @@ def construir_aplicacion() -> Application:
     app.add_handler(conversacion)
     app.add_handler(conversacion_publicar)
     app.add_handler(CommandHandler("probar", start.cmd_probar))
+    app.add_handler(CommandHandler("panel", start.cmd_panel))
     app.add_handler(CallbackQueryHandler(start.menu_volver, pattern="^menu:volver$"))
     app.add_handler(
         CallbackQueryHandler(mispublicaciones.mostrar_mis_publicaciones, pattern="^menu:mispublicaciones$")

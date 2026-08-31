@@ -6,6 +6,7 @@ objetos Propiedad, con sus extras ya cargados adentro.
 """
 
 import uuid
+from datetime import datetime, date
 
 from motor.models import Propiedad, Extra, TipoPropiedad
 from motor.sheets_client import leer_todas_las_filas, agregar_fila, actualizar_celda_por_id
@@ -50,6 +51,7 @@ def _fila_a_propiedad(fila: dict, extras: list[Extra]) -> Propiedad:
         codigo_casa_arrendamiento=fila.get("codigo_casa_arrendamiento", ""),
         horarios_visita=fila.get("horarios_visita", ""),
         disponibilidad=fila.get("disponibilidad", ""),
+        fecha_publicacion=fila.get("fecha_publicacion", ""),
         fotos=[f.strip() for f in fotos_texto.split(",") if f.strip()],
         activa=_texto_a_booleano(fila.get("activa", "")),
         extras_disponibles=extras,
@@ -146,6 +148,7 @@ def crear_propiedad(
             disponibilidad,
             "",  # fotos - se agrega mas adelante
             "TRUE",
+            datetime.now().strftime("%Y-%m-%d %H:%M"),
         ],
     )
     return id_nuevo

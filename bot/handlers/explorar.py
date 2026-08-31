@@ -14,6 +14,7 @@ from telegram.ext import ContextTypes, ConversationHandler
 from motor.models import TipoPropiedad
 from motor.propiedades import listar_propiedades, obtener_propiedad
 from motor.precios import es_full
+from motor.metricas import registrar_vista
 from bot import textos, teclados
 from bot.seguro import llamar_con_limite, ErrorDelMotor
 
@@ -227,6 +228,13 @@ async def mostrar_detalle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if propiedad is None:
         await query.edit_message_text(textos.SIN_RESULTADOS)
         return ConversationHandler.END
+
+    # Registrar la vista es "mejor esfuerzo": si falla (ej. problema de
+    # red pasajero), NO debe impedir que el usuario vea la propiedad.
+    try:
+        await llamar_con_limite(registrar_vista, propiedad_id)
+    except ErrorDelMotor as error:
+        print(f"RASTRO: no se pudo registrar la vista de {propiedad_id}: {error.mensaje}", flush=True)
 
     etiqueta = f"\n\n{textos.ETIQUETA_FULL}" if es_full(propiedad) else ""
     codigo = (

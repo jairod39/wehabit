@@ -65,6 +65,7 @@ class Propiedad:
     codigo_casa_arrendamiento: str = ""  # codigo/referencia en la casa de arrendamiento, si aplica
     horarios_visita: str = ""  # horarios que el dueno ofrece para VISITAS, ej "Viernes 15:00, Sabado 10:00"
     disponibilidad: str = ""  # texto libre del dueno sobre disponibilidad de estadia (solo informativo)
+    fecha_publicacion: str = ""  # cuando se creo, para medir crecimiento en el tiempo
     fotos: list[str] = field(default_factory=list)
     extras_disponibles: list[Extra] = field(default_factory=list)
     items_calificables: list[ItemCalificable] = field(default_factory=list)

@@ -42,6 +42,21 @@ def obtener_pestana(nombre: str):
     return _conectar().worksheet(nombre)
 
 
+def obtener_o_crear_pestana(nombre: str, encabezados: list[str]):
+    """
+    Como obtener_pestana, pero si la pestana no existe todavia, la crea
+    sola con esos encabezados en la fila 1. Sirve para pestanas nuevas
+    de metricas (ej. 'Vistas') sin tener que crearlas a mano en Sheets.
+    """
+    hoja = _conectar()
+    try:
+        return hoja.worksheet(nombre)
+    except gspread.WorksheetNotFound:
+        pestana = hoja.add_worksheet(title=nombre, rows=1000, cols=len(encabezados))
+        pestana.append_row(encabezados, value_input_option="USER_ENTERED")
+        return pestana
+
+
 def leer_todas_las_filas(nombre_pestana: str) -> list[dict]:
     """Lee todas las filas de una pestana como una lista de diccionarios
     (usa la fila 1, los encabezados, como llaves)."""
@@ -49,9 +64,26 @@ def leer_todas_las_filas(nombre_pestana: str) -> list[dict]:
     return pestana.get_all_records()
 
 
+def leer_todas_las_filas_seguro(nombre_pestana: str) -> list[dict]:
+    """Como leer_todas_las_filas, pero si la pestana todavia no existe
+    (ej. 'Vistas' antes de que alguien vea una propiedad por primera
+    vez), devuelve una lista vacia en vez de fallar."""
+    try:
+        return leer_todas_las_filas(nombre_pestana)
+    except gspread.WorksheetNotFound:
+        return []
+
+
 def agregar_fila(nombre_pestana: str, valores: list) -> None:
     """Agrega una fila nueva al final de una pestana."""
     pestana = obtener_pestana(nombre_pestana)
+    pestana.append_row(valores, value_input_option="USER_ENTERED")
+
+
+def agregar_fila_con_creacion(nombre_pestana: str, encabezados: list[str], valores: list) -> None:
+    """Como agregar_fila, pero crea la pestana sola (con encabezados) si
+    todavia no existe."""
+    pestana = obtener_o_crear_pestana(nombre_pestana, encabezados)
     pestana.append_row(valores, value_input_option="USER_ENTERED")
 
 
