@@ -8,18 +8,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from motor.models import Propiedad, TipoPropiedad
 from motor.precios import es_full
+from motor.paises import PAISES_POR_CONTINENTE
 from bot import textos
-
-# Lista fija de paises: dato geografico real, no cambia, no necesita IA
-# ni ninguna consulta externa. Cubre los mercados donde WeHabit opera
-# hoy; agregar mas paises despues es solo sumar lineas a esta lista.
-PAISES_PUBLICAR = [
-    "Colombia", "Mexico", "Argentina", "Peru", "Chile", "Ecuador",
-    "Venezuela", "Bolivia", "Paraguay", "Uruguay", "Panama",
-    "Costa Rica", "Guatemala", "Honduras", "El Salvador", "Nicaragua",
-    "Republica Dominicana", "Cuba", "Puerto Rico", "Espana",
-    "Estados Unidos", "Canada", "Brasil", "Portugal",
-]
 
 # Lista fija de detalles destacados que el dueno puede elegir al publicar.
 # Fija a proposito: asi el dato queda ESTANDARIZADO (una etiqueta real,
@@ -66,8 +56,19 @@ def teclado_paginado(
     return InlineKeyboardMarkup(filas)
 
 
-def teclado_paises_publicar(pagina: int = 0) -> InlineKeyboardMarkup:
-    return teclado_paginado(PAISES_PUBLICAR, "paispub", pagina)
+def teclado_continentes() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(continente, callback_data=f"continente:{continente}")]
+        for continente in PAISES_POR_CONTINENTE
+    ])
+
+
+def teclado_paises_de_continente(continente: str, pagina: int = 0) -> InlineKeyboardMarkup:
+    paises = PAISES_POR_CONTINENTE.get(continente, [])
+    teclado = teclado_paginado(paises, "paispub", pagina)
+    filas = list(teclado.inline_keyboard)
+    filas.append([InlineKeyboardButton("<< Cambiar de continente", callback_data="continente_volver:1")])
+    return InlineKeyboardMarkup(filas)
 
 
 def teclado_ciudades_publicar(ciudades: list[str], pagina: int = 0) -> InlineKeyboardMarkup:

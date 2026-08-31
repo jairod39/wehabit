@@ -63,6 +63,7 @@ PUBLICAR_PROXIMAMENTE = (
 
 ELEGIR_TIPO = "Que tipo de alojamiento buscas?"
 ELEGIR_PAIS = "En que pais?"
+ELEGIR_CONTINENTE = "Primero, en que continente esta?"
 ELEGIR_CIUDAD = "En que ciudad?"
 SIN_RESULTADOS = "No encontramos alojamientos con esos filtros todavia."
 

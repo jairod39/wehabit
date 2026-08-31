@@ -26,11 +26,13 @@ from telegram.ext import ContextTypes, ConversationHandler
 
 from motor.models import TipoPropiedad
 from motor.propiedades import crear_propiedad, listar_ciudades_de_pais
+from motor.paises import PAISES_POR_CONTINENTE
 from bot import textos, teclados
 from bot.seguro import llamar_con_limite, ErrorDelMotor
 
 (
     ESPERANDO_TIPO,
+    ESPERANDO_CONTINENTE,
     ESPERANDO_PAIS,
     ESPERANDO_CIUDAD,
     ESPERANDO_CIUDAD_OTRA,
@@ -43,7 +45,7 @@ from bot.seguro import llamar_con_limite, ErrorDelMotor
     ESPERANDO_HORARIOS_VISITA,
     ESPERANDO_DISPONIBILIDAD,
     ESPERANDO_CONFIRMACION,
-) = range(200, 213)
+) = range(200, 214)
 
 SALTAR = {"-", "ninguna", "ninguno", "no", "skip"}
 
@@ -69,16 +71,37 @@ async def recibir_tipo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tipo_texto = query.data.split(":", 1)[1]
     context.user_data["nueva_propiedad"]["tipo"] = tipo_texto
     await query.message.reply_text(
-        textos.ELEGIR_PAIS, reply_markup=teclados.teclado_paises_publicar()
+        textos.ELEGIR_CONTINENTE, reply_markup=teclados.teclado_continentes()
+    )
+    return ESPERANDO_CONTINENTE
+
+
+async def recibir_continente(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    continente = query.data.split(":", 1)[1]
+    context.user_data["continente_actual"] = continente
+    await query.message.reply_text(
+        textos.ELEGIR_PAIS, reply_markup=teclados.teclado_paises_de_continente(continente)
     )
     return ESPERANDO_PAIS
+
+
+async def volver_a_continentes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_reply_markup(reply_markup=teclados.teclado_continentes())
+    return ESPERANDO_CONTINENTE
 
 
 async def paginar_paises(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     pagina = int(query.data.split(":", 1)[1])
-    await query.edit_message_reply_markup(reply_markup=teclados.teclado_paises_publicar(pagina))
+    continente = context.user_data.get("continente_actual", "America")
+    await query.edit_message_reply_markup(
+        reply_markup=teclados.teclado_paises_de_continente(continente, pagina)
+    )
     return ESPERANDO_PAIS
 
 

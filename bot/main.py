@@ -87,8 +87,12 @@ def construir_aplicacion() -> Application:
             publicar.ESPERANDO_TIPO: [
                 CallbackQueryHandler(publicar.recibir_tipo, pattern="^publicar_tipo:")
             ],
+            publicar.ESPERANDO_CONTINENTE: [
+                CallbackQueryHandler(publicar.recibir_continente, pattern="^continente:")
+            ],
             publicar.ESPERANDO_PAIS: [
                 CallbackQueryHandler(publicar.paginar_paises, pattern="^paispub_pag:"),
+                CallbackQueryHandler(publicar.volver_a_continentes, pattern="^continente_volver:"),
                 CallbackQueryHandler(publicar.recibir_pais, pattern="^paispub:"),
             ],
             publicar.ESPERANDO_CIUDAD: [
