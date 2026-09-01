@@ -38,6 +38,13 @@ PEDIR_DIRECCION = (
     "Si prefieres no darla todavia, escribe: -"
 )
 PEDIR_METODO_PAGO = "Como prefieres que te paguen? (ej: Transferencia, efectivo). Si no aplica, escribe: -"
+PEDIR_UBICACION = (
+    "Toca el boton para compartir tu ubicacion exacta (queda guardada para "
+    "mostrarla solo cuando alguien confirme una visita). Si prefieres no darla, escribe: -"
+)
+UBICACION_RECIBIDA = "Ubicacion guardada."
+UBICACION_OMITIDA = "Sin problema, sin ubicacion por ahora."
+UBICACION_INVALIDA = "Usa el boton para compartir tu ubicacion, o escribe - para saltar este paso."
 PEDIR_HORARIOS_VISITA_DUENO = (
     "Que horarios ofreces para visitas? Formato: Dia HH:MM, separados por comas.\n"
     "Ejemplo: Viernes 15:00, Sabado 10:00, Sabado 15:00\n"

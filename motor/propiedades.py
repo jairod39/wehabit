@@ -118,6 +118,7 @@ def crear_propiedad(
     pais: str,
     ciudad: str,
     direccion_escrita: str = "",
+    ubicacion: str = "",
     metodo_pago: str = "",
     horarios_visita: str = "",
     disponibilidad: str = "",
@@ -140,7 +141,7 @@ def crear_propiedad(
             precio_base,
             pais,
             ciudad,
-            "",  # ubicacion (link de mapa) - se agrega mas adelante
+            ubicacion,
             direccion_escrita,
             metodo_pago,
             "",  # codigo_casa_arrendamiento - no aplica a publicaciones directas

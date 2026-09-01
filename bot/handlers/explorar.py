@@ -232,7 +232,7 @@ async def mostrar_detalle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Registrar la vista es "mejor esfuerzo": si falla (ej. problema de
     # red pasajero), NO debe impedir que el usuario vea la propiedad.
     try:
-        await llamar_con_limite(registrar_vista, propiedad_id)
+        await llamar_con_limite(registrar_vista, propiedad_id, str(update.effective_user.id))
     except ErrorDelMotor as error:
         print(f"RASTRO: no se pudo registrar la vista de {propiedad_id}: {error.mensaje}", flush=True)
 

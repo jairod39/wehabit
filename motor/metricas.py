@@ -14,16 +14,33 @@ from motor.sheets_client import (
     leer_todas_las_filas_seguro,
 )
 
-ENCABEZADOS_VISTAS = ["propiedad_id", "fecha"]
+ENCABEZADOS_VISTAS = ["propiedad_id", "usuario_id", "fecha"]
 
 
-def registrar_vista(propiedad_id: str) -> None:
-    """Guarda que alguien vio el detalle de una propiedad. Se llama
+def registrar_vista(propiedad_id: str, usuario_id: str) -> None:
+    """Guarda que un usuario especifico vio el detalle de una propiedad.
+    Guardar QUIEN vio (no solo cuantas veces) es la base para poder
+    armar mas adelante el recorrido de un usuario: que vio, en que
+    orden, y si termino agendando. Sin esto no hay perfil que armar,
+    solo conteos sueltos.
+
     'mejor esfuerzo': si falla, no debe tumbar la experiencia del
     usuario viendo la propiedad (eso se maneja en quien la llama)."""
     agregar_fila_con_creacion(
-        "Vistas", ENCABEZADOS_VISTAS, [propiedad_id, datetime.now().strftime("%Y-%m-%d %H:%M")]
+        "Vistas",
+        ENCABEZADOS_VISTAS,
+        [propiedad_id, usuario_id, datetime.now().strftime("%Y-%m-%d %H:%M")],
     )
+
+
+def recorrido_de_usuario(usuario_id: str) -> list[dict]:
+    """
+    Todas las vistas de un usuario especifico, en orden. Esta es la
+    base de datos cruda para el futuro 'perfil de comprador': que vio,
+    en que orden, cuando. Por ahora solo la expone, no la analiza.
+    """
+    filas = leer_todas_las_filas_seguro("Vistas")
+    return [f for f in filas if str(f.get("usuario_id", "")) == str(usuario_id)]
 
 
 def resumen_panel() -> dict:

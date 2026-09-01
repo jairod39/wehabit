@@ -118,6 +118,9 @@ def construir_aplicacion() -> Application:
             publicar.ESPERANDO_DIRECCION: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_direccion)
             ],
+            publicar.ESPERANDO_UBICACION: [
+                MessageHandler(filters.LOCATION | (filters.TEXT & ~filters.COMMAND), publicar.recibir_ubicacion)
+            ],
             publicar.ESPERANDO_METODO_PAGO: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_metodo_pago)
             ],

@@ -41,11 +41,12 @@ from bot.seguro import llamar_con_limite, ErrorDelMotor
     ESPERANDO_DESCRIPCION,
     ESPERANDO_PRECIO,
     ESPERANDO_DIRECCION,
+    ESPERANDO_UBICACION,
     ESPERANDO_METODO_PAGO,
     ESPERANDO_HORARIOS_VISITA,
     ESPERANDO_DISPONIBILIDAD,
     ESPERANDO_CONFIRMACION,
-) = range(200, 214)
+) = range(200, 215)
 
 SALTAR = {"-", "ninguna", "ninguno", "no", "skip"}
 
@@ -234,6 +235,30 @@ async def recibir_precio(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def recibir_direccion(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = update.message.text.strip()
     context.user_data["nueva_propiedad"]["direccion_escrita"] = "" if _quiso_saltar(texto) else texto
+    await update.message.reply_text(
+        textos.PEDIR_UBICACION, reply_markup=teclados.teclado_compartir_ubicacion()
+    )
+    return ESPERANDO_UBICACION
+
+
+async def recibir_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    from telegram import ReplyKeyboardRemove
+
+    if update.message.location:
+        lat = update.message.location.latitude
+        lon = update.message.location.longitude
+        context.user_data["nueva_propiedad"]["ubicacion"] = (
+            f"https://www.google.com/maps/search/?api=1&query={lat},{lon}"
+        )
+        await update.message.reply_text(textos.UBICACION_RECIBIDA, reply_markup=ReplyKeyboardRemove())
+    else:
+        texto = (update.message.text or "").strip()
+        if not _quiso_saltar(texto):
+            await update.message.reply_text(textos.UBICACION_INVALIDA)
+            return ESPERANDO_UBICACION
+        context.user_data["nueva_propiedad"]["ubicacion"] = ""
+        await update.message.reply_text(textos.UBICACION_OMITIDA, reply_markup=ReplyKeyboardRemove())
+
     await update.message.reply_text(textos.PEDIR_METODO_PAGO)
     return ESPERANDO_METODO_PAGO
 
@@ -271,6 +296,7 @@ async def recibir_disponibilidad(update: Update, context: ContextTypes.DEFAULT_T
         f"Pais: {datos['pais']}\n"
         f"Ciudad: {datos['ciudad']}\n"
         f"Direccion: {datos['direccion_escrita'] or '(sin especificar)'}\n"
+        f"Ubicacion en mapa: {'Compartida' if datos.get('ubicacion') else '(sin especificar)'}\n"
         f"Metodo de pago: {datos['metodo_pago'] or '(sin especificar)'}\n"
         f"Horarios de visita: {datos['horarios_visita'] or '(sin especificar)'}\n"
         f"Disponibilidad: {datos['disponibilidad'] or '(sin especificar)'}"
@@ -301,6 +327,7 @@ async def confirmar_publicacion(update: Update, context: ContextTypes.DEFAULT_TY
             pais=datos["pais"],
             ciudad=datos["ciudad"],
             direccion_escrita=datos["direccion_escrita"],
+            ubicacion=datos.get("ubicacion", ""),
             metodo_pago=datos["metodo_pago"],
             horarios_visita=datos["horarios_visita"],
             disponibilidad=datos["disponibilidad"],

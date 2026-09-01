@@ -4,7 +4,7 @@ Separado de la logica de conversacion para que cada archivo tenga
 una sola responsabilidad.
 """
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
 from motor.models import Propiedad, TipoPropiedad
 from motor.precios import es_full
@@ -93,6 +93,19 @@ def teclado_destacados() -> InlineKeyboardMarkup:
     ]
     filas.append([InlineKeyboardButton("Otro (escribir el mio)", callback_data="destacado:otro")])
     return InlineKeyboardMarkup(filas)
+
+
+def teclado_compartir_ubicacion() -> ReplyKeyboardMarkup:
+    """
+    Teclado nativo de Telegram para compartir ubicacion real (lat/long
+    exactos), en vez de pedir un link pegado a mano. Se puede saltar
+    escribiendo '-' como en los demas pasos opcionales.
+    """
+    return ReplyKeyboardMarkup(
+        [[KeyboardButton("Compartir mi ubicacion", request_location=True)], ["-"]],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
 
 
 def teclado_tipos_publicar() -> InlineKeyboardMarkup:
