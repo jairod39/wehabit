@@ -52,6 +52,7 @@ def _fila_a_propiedad(fila: dict, extras: list[Extra]) -> Propiedad:
         horarios_visita=fila.get("horarios_visita", ""),
         disponibilidad=fila.get("disponibilidad", ""),
         fecha_publicacion=fila.get("fecha_publicacion", ""),
+        destacados=fila.get("destacados", ""),
         fotos=[f.strip() for f in fotos_texto.split(",") if f.strip()],
         activa=_texto_a_booleano(fila.get("activa", "")),
         extras_disponibles=extras,
@@ -122,6 +123,7 @@ def crear_propiedad(
     metodo_pago: str = "",
     horarios_visita: str = "",
     disponibilidad: str = "",
+    destacados: str = "",
 ) -> str:
     """
     Escribe una propiedad nueva en la pestana 'Propiedades' y devuelve
@@ -150,9 +152,18 @@ def crear_propiedad(
             "",  # fotos - se agrega mas adelante
             "TRUE",
             datetime.now().strftime("%Y-%m-%d %H:%M"),
+            destacados,
         ],
     )
     return id_nuevo
+
+
+def agregar_extra_a_propiedad(propiedad_id: str, nombre: str, precio_extra: float) -> str:
+    """Agrega un extra (ej. Wifi, +5000/mes) a una propiedad. El dueno
+    define el precio, nosotros solo hacemos la cuenta despues con eso."""
+    id_extra = f"e{uuid.uuid4().hex[:8]}"
+    agregar_fila("Extras", [id_extra, propiedad_id, nombre, precio_extra, "FALSE"])
+    return id_extra
 
 
 def listar_ciudades_de_pais(pais: str) -> list[str]:

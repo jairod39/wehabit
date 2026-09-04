@@ -103,14 +103,11 @@ def construir_aplicacion() -> Application:
             publicar.ESPERANDO_CIUDAD_OTRA: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_ciudad_otra)
             ],
-            publicar.ESPERANDO_DESTACADO: [
-                CallbackQueryHandler(publicar.recibir_destacado_menu, pattern="^destacado:")
+            publicar.ESPERANDO_DESTACADOS: [
+                CallbackQueryHandler(publicar.recibir_destacado_toggle, pattern="^destacm:")
             ],
             publicar.ESPERANDO_DESTACADO_OTRO: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_destacado_otro)
-            ],
-            publicar.ESPERANDO_DESCRIPCION: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_descripcion)
             ],
             publicar.ESPERANDO_PRECIO: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_precio)
@@ -122,13 +119,28 @@ def construir_aplicacion() -> Application:
                 MessageHandler(filters.LOCATION | (filters.TEXT & ~filters.COMMAND), publicar.recibir_ubicacion)
             ],
             publicar.ESPERANDO_METODO_PAGO: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_metodo_pago)
+                CallbackQueryHandler(publicar.recibir_metodo_pago_menu, pattern="^metodopago:")
+            ],
+            publicar.ESPERANDO_METODO_PAGO_OTRO: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_metodo_pago_otro)
+            ],
+            publicar.ESPERANDO_EXTRAS: [
+                CallbackQueryHandler(publicar.recibir_extra_toggle, pattern="^extram:")
+            ],
+            publicar.ESPERANDO_EXTRA_NOMBRE_OTRO: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_extra_nombre_otro)
+            ],
+            publicar.ESPERANDO_EXTRA_PRECIO: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_extra_precio)
             ],
             publicar.ESPERANDO_HORARIOS_VISITA: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_horarios_visita)
             ],
             publicar.ESPERANDO_DISPONIBILIDAD: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_disponibilidad)
+            ],
+            publicar.ESPERANDO_DESCRIPCION: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, publicar.recibir_descripcion)
             ],
             publicar.ESPERANDO_CONFIRMACION: [
                 CallbackQueryHandler(publicar.confirmar_publicacion, pattern="^confirmar_publicar:")

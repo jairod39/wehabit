@@ -26,8 +26,28 @@ PUBLICAR_INTRO = (
 )
 
 PEDIR_TITULO = "Ponle un titulo corto (ej: 'Habitacion amoblada cerca al metro')"
-ELEGIR_DESTACADO = "Elige lo que mas destaca de tu propiedad (o escribe la tuya si no esta en la lista):"
-PEDIR_DESTACADO = "Escribe el detalle que quieras resaltar (ej: 'con vista al mar')."
+ELEGIR_DESTACADO = "Marca todo lo que aplique (puedes elegir varios). Cuando termines, toca Listo:"
+PEDIR_DESTACADO = "Escribe el detalle que quieras agregar (ej: 'con vista al mar')."
+
+ELEGIR_METODO_PAGO = "Como prefieres que te paguen?"
+PEDIR_METODO_PAGO_OTRO = "Escribe el metodo de pago que prefieres."
+
+ELEGIR_EXTRAS_PUBLICAR = (
+    "Marca lo que tu propiedad ofrece (puedes elegir varios). "
+    "A cada uno le vas a poner un precio MENSUAL despues. Toca Listo cuando termines:"
+)
+PEDIR_EXTRA_NOMBRE_OTRO = "Como se llama ese extra?"
+PEDIR_PRECIO_EXTRA = "Cuanto cuesta '{nombre}' al MES? (solo el numero)"
+
+PEDIR_DESCRIPCION_PLANTILLA = (
+    "Ya casi. Ahora escribe la descripcion siguiendo esta guia, para que "
+    "siempre se lea igual de clara:\n\n"
+    "1) Como es el ambiente (tranquilo, familiar, estudiantil...)\n"
+    "2) Que hay cerca (transporte, comercio, universidades...)\n"
+    "3) Algo que la haga especial\n\n"
+    "Ejemplo: 'Ambiente tranquilo y familiar. A 5 minutos del metro y "
+    "cerca a varios supermercados. Recien remodelada, con mucha luz natural.'"
+)
 PEDIR_DESCRIPCION = "Ahora describela: que tiene, como es, que la hace buena."
 PEDIR_PRECIO = "Cual es el precio por noche? (solo el numero, sin simbolos)"
 PRECIO_INVALIDO = "Eso no parece un numero. Escribe solo el precio, ej: 500000"

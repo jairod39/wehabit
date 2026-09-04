@@ -2,31 +2,26 @@
 Conversacion para que un dueno PUBLIQUE su propiedad hablando con el bot,
 sin tocar el Google Sheet a mano y CASI SIN escribir texto libre.
 
-Filosofia: todo lo que se pueda estandarizar con un menu, se pide con
-un menu (tipo, pais, ciudad, detalle destacado). Solo se deja texto
-libre donde de verdad no hay forma de estandarizarlo (descripcion,
-precio como numero, direccion, metodo de pago).
+Orden del flujo (pensado para minimizar friccion):
+tipo -> continente -> pais -> ciudad -> destacados (varios, con menu) ->
+precio -> direccion -> ubicacion -> metodo de pago (menu) ->
+extras con precio mensual (menu) -> horarios de visita (solo habitacion) ->
+disponibilidad -> descripcion (al final, con plantilla-guia) -> confirmar.
 
-- PAIS: lista fija (dato geografico real, no cambia).
-- CIUDAD: se arma con las ciudades que YA existen en nuestros datos
-  para ese pais. Si la ciudad no esta, se agrega la primera vez y
-  desde ahi queda disponible en el menu para todos los que publiquen
-  despues en ese mismo pais. Asi el "menu" crece solo con datos reales,
-  sin depender de una base de datos externa de todas las ciudades del
-  mundo (eso no existe como algo manejable en botones).
-- TITULO: no se pide como texto libre, se arma solo a partir de
-  tipo + ciudad + detalle destacado (elegido de un menu tambien).
+La descripcion va AL FINAL a proposito: para cuando el dueno la escribe,
+ya definio todo lo demas con menus, asi que la descripcion solo tiene
+que aportar lo que un menu no puede captar (el "sentir" del lugar), no
+repetir datos que ya quedaron estructurados.
 
 Es una ConversationHandler SEPARADA de la de explorar/agendar (no
 comparte el mismo diccionario de estados).
 """
 
-from telegram import Update
+from telegram import Update, ReplyKeyboardRemove
 from telegram.ext import ContextTypes, ConversationHandler
 
 from motor.models import TipoPropiedad
-from motor.propiedades import crear_propiedad, listar_ciudades_de_pais
-from motor.paises import PAISES_POR_CONTINENTE
+from motor.propiedades import crear_propiedad, listar_ciudades_de_pais, agregar_extra_a_propiedad
 from bot import textos, teclados
 from bot.seguro import llamar_con_limite, ErrorDelMotor
 
@@ -36,17 +31,21 @@ from bot.seguro import llamar_con_limite, ErrorDelMotor
     ESPERANDO_PAIS,
     ESPERANDO_CIUDAD,
     ESPERANDO_CIUDAD_OTRA,
-    ESPERANDO_DESTACADO,
+    ESPERANDO_DESTACADOS,
     ESPERANDO_DESTACADO_OTRO,
-    ESPERANDO_DESCRIPCION,
     ESPERANDO_PRECIO,
     ESPERANDO_DIRECCION,
     ESPERANDO_UBICACION,
     ESPERANDO_METODO_PAGO,
+    ESPERANDO_METODO_PAGO_OTRO,
+    ESPERANDO_EXTRAS,
+    ESPERANDO_EXTRA_NOMBRE_OTRO,
+    ESPERANDO_EXTRA_PRECIO,
     ESPERANDO_HORARIOS_VISITA,
     ESPERANDO_DISPONIBILIDAD,
+    ESPERANDO_DESCRIPCION,
     ESPERANDO_CONFIRMACION,
-) = range(200, 215)
+) = range(200, 219)
 
 SALTAR = {"-", "ninguna", "ninguno", "no", "skip"}
 
@@ -143,15 +142,21 @@ async def paginar_ciudades(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ESPERANDO_CIUDAD
 
 
+def _iniciar_destacados(context) -> None:
+    context.user_data["nueva_propiedad"]["destacados_idx"] = set()
+    context.user_data["nueva_propiedad"]["destacados_custom"] = []
+
+
 async def recibir_ciudad(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     ciudad = query.data.split(":", 1)[1]
     context.user_data["nueva_propiedad"]["ciudad"] = ciudad
+    _iniciar_destacados(context)
     await query.message.reply_text(
-        textos.ELEGIR_DESTACADO, reply_markup=teclados.teclado_destacados()
+        textos.ELEGIR_DESTACADO, reply_markup=teclados.teclado_destacados_multi(set())
     )
-    return ESPERANDO_DESTACADO
+    return ESPERANDO_DESTACADOS
 
 
 async def pedir_ciudad_otra(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -166,39 +171,50 @@ async def recibir_ciudad_otra(update: Update, context: ContextTypes.DEFAULT_TYPE
     if len(texto) < 3:
         await update.message.reply_text(textos.TEXTO_MUY_CORTO)
         return ESPERANDO_CIUDAD_OTRA
-    # Esta ciudad queda grabada al publicar (va en la fila de la
-    # propiedad), asi que la proxima persona que publique en este mismo
-    # pais ya la va a ver en el menu, sin tener que escribirla de nuevo.
     context.user_data["nueva_propiedad"]["ciudad"] = texto
+    _iniciar_destacados(context)
     await update.message.reply_text(
-        textos.ELEGIR_DESTACADO, reply_markup=teclados.teclado_destacados()
+        textos.ELEGIR_DESTACADO, reply_markup=teclados.teclado_destacados_multi(set())
     )
-    return ESPERANDO_DESTACADO
+    return ESPERANDO_DESTACADOS
 
 
-def _construir_titulo(context: ContextTypes.DEFAULT_TYPE, detalle: str) -> None:
-    """Construye el titulo SIEMPRE con la misma estructura (Tipo en
-    Ciudad - detalle), sin importar si el detalle vino del menu o fue
-    escrito a mano."""
-    datos = context.user_data["nueva_propiedad"]
-    tipo_legible = datos["tipo"].capitalize()
-    datos["titulo"] = f"{tipo_legible} en {datos['ciudad']} - {detalle}"
-    datos["destacado"] = detalle
-
-
-async def recibir_destacado_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def recibir_destacado_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     dato = query.data.split(":", 1)[1]
+    datos = context.user_data["nueva_propiedad"]
 
     if dato == "otro":
         await query.message.reply_text(textos.PEDIR_DESTACADO)
         return ESPERANDO_DESTACADO_OTRO
 
-    detalle = teclados.DESTACADOS_PREDEFINIDOS[int(dato)]
-    _construir_titulo(context, detalle)
-    await query.message.reply_text(textos.PEDIR_DESCRIPCION)
-    return ESPERANDO_DESCRIPCION
+    if dato == "listo":
+        etiquetas = [
+            teclados.DESTACADOS_PREDEFINIDOS[i]
+            for i in range(len(teclados.DESTACADOS_PREDEFINIDOS))
+            if str(i) in datos["destacados_idx"]
+        ]
+        etiquetas += datos["destacados_custom"]
+        if not etiquetas:
+            await query.answer("Marca al menos uno antes de continuar", show_alert=True)
+            return ESPERANDO_DESTACADOS
+
+        tipo_legible = datos["tipo"].capitalize()
+        datos["titulo"] = f"{tipo_legible} en {datos['ciudad']} - {' y '.join(etiquetas[:2])}"
+        datos["destacados"] = ", ".join(etiquetas)
+        await query.message.reply_text(textos.PEDIR_PRECIO)
+        return ESPERANDO_PRECIO
+
+    seleccionados = datos["destacados_idx"]
+    if dato in seleccionados:
+        seleccionados.remove(dato)
+    else:
+        seleccionados.add(dato)
+    await query.edit_message_reply_markup(
+        reply_markup=teclados.teclado_destacados_multi(seleccionados)
+    )
+    return ESPERANDO_DESTACADOS
 
 
 async def recibir_destacado_otro(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -207,19 +223,13 @@ async def recibir_destacado_otro(update: Update, context: ContextTypes.DEFAULT_T
         await update.message.reply_text(textos.TEXTO_MUY_CORTO)
         return ESPERANDO_DESTACADO_OTRO
 
-    _construir_titulo(context, texto)
-    await update.message.reply_text(textos.PEDIR_DESCRIPCION)
-    return ESPERANDO_DESCRIPCION
-
-
-async def recibir_descripcion(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    texto = update.message.text.strip()
-    if len(texto) < 5:
-        await update.message.reply_text(textos.TEXTO_MUY_CORTO)
-        return ESPERANDO_DESCRIPCION
-    context.user_data["nueva_propiedad"]["descripcion"] = texto
-    await update.message.reply_text(textos.PEDIR_PRECIO)
-    return ESPERANDO_PRECIO
+    datos = context.user_data["nueva_propiedad"]
+    datos["destacados_custom"].append(texto)
+    await update.message.reply_text(
+        textos.ELEGIR_DESTACADO,
+        reply_markup=teclados.teclado_destacados_multi(datos["destacados_idx"]),
+    )
+    return ESPERANDO_DESTACADOS
 
 
 async def recibir_precio(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -242,8 +252,6 @@ async def recibir_direccion(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def recibir_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    from telegram import ReplyKeyboardRemove
-
     if update.message.location:
         lat = update.message.location.latitude
         lon = update.message.location.longitude
@@ -259,21 +267,126 @@ async def recibir_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["nueva_propiedad"]["ubicacion"] = ""
         await update.message.reply_text(textos.UBICACION_OMITIDA, reply_markup=ReplyKeyboardRemove())
 
-    await update.message.reply_text(textos.PEDIR_METODO_PAGO)
+    await update.message.reply_text(
+        textos.ELEGIR_METODO_PAGO, reply_markup=teclados.teclado_metodos_pago()
+    )
     return ESPERANDO_METODO_PAGO
 
 
-async def recibir_metodo_pago(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def _iniciar_extras(context) -> None:
+    context.user_data["nueva_propiedad"]["extras_idx"] = set()
+    context.user_data["nueva_propiedad"]["extras_custom"] = []
+
+
+async def _pasar_a_extras(mensaje, context):
+    _iniciar_extras(context)
+    await mensaje.reply_text(
+        textos.ELEGIR_EXTRAS_PUBLICAR, reply_markup=teclados.teclado_extras_publicar_multi(set())
+    )
+    return ESPERANDO_EXTRAS
+
+
+async def recibir_metodo_pago_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    dato = query.data.split(":", 1)[1]
+
+    if dato == "otro":
+        await query.message.reply_text(textos.PEDIR_METODO_PAGO_OTRO)
+        return ESPERANDO_METODO_PAGO_OTRO
+
+    context.user_data["nueva_propiedad"]["metodo_pago"] = teclados.METODOS_PAGO_PREDEFINIDOS[int(dato)]
+    return await _pasar_a_extras(query.message, context)
+
+
+async def recibir_metodo_pago_otro(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = update.message.text.strip()
     context.user_data["nueva_propiedad"]["metodo_pago"] = "" if _quiso_saltar(texto) else texto
+    return await _pasar_a_extras(update.message, context)
 
-    if context.user_data["nueva_propiedad"]["tipo"] == TipoPropiedad.HABITACION.value:
-        await update.message.reply_text(textos.PEDIR_HORARIOS_VISITA_DUENO)
+
+async def _empezar_a_pedir_precios_extras(mensaje, context):
+    """Arranca (o continua) la cola de 'pedir precio de cada extra
+    marcado, uno por uno'. Si ya no queda ninguno, sigue con horarios."""
+    datos = context.user_data["nueva_propiedad"]
+    pendientes = datos["extras_pendientes"]
+
+    if not pendientes:
+        return await _pasar_a_horarios(mensaje, context)
+
+    nombre = pendientes[0]
+    await mensaje.reply_text(textos.PEDIR_PRECIO_EXTRA.format(nombre=nombre))
+    return ESPERANDO_EXTRA_PRECIO
+
+
+async def _pasar_a_horarios(mensaje, context):
+    datos = context.user_data["nueva_propiedad"]
+    if datos["tipo"] == TipoPropiedad.HABITACION.value:
+        await mensaje.reply_text(textos.PEDIR_HORARIOS_VISITA_DUENO)
         return ESPERANDO_HORARIOS_VISITA
 
-    context.user_data["nueva_propiedad"]["horarios_visita"] = ""
-    await update.message.reply_text(textos.PEDIR_DISPONIBILIDAD)
+    datos["horarios_visita"] = ""
+    await mensaje.reply_text(textos.PEDIR_DISPONIBILIDAD)
     return ESPERANDO_DISPONIBILIDAD
+
+
+async def recibir_extra_toggle(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    dato = query.data.split(":", 1)[1]
+    datos = context.user_data["nueva_propiedad"]
+
+    if dato == "otro":
+        await query.message.reply_text(textos.PEDIR_EXTRA_NOMBRE_OTRO)
+        return ESPERANDO_EXTRA_NOMBRE_OTRO
+
+    if dato == "listo":
+        nombres = [
+            teclados.EXTRAS_PUBLICAR_PREDEFINIDOS[i]
+            for i in range(len(teclados.EXTRAS_PUBLICAR_PREDEFINIDOS))
+            if str(i) in datos["extras_idx"]
+        ]
+        nombres += datos["extras_custom"]
+        datos["extras_pendientes"] = nombres
+        datos["extras_con_precio"] = []
+        return await _empezar_a_pedir_precios_extras(query.message, context)
+
+    seleccionados = datos["extras_idx"]
+    if dato in seleccionados:
+        seleccionados.remove(dato)
+    else:
+        seleccionados.add(dato)
+    await query.edit_message_reply_markup(
+        reply_markup=teclados.teclado_extras_publicar_multi(seleccionados)
+    )
+    return ESPERANDO_EXTRAS
+
+
+async def recibir_extra_nombre_otro(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    texto = update.message.text.strip()
+    if len(texto) < 2:
+        await update.message.reply_text(textos.TEXTO_MUY_CORTO)
+        return ESPERANDO_EXTRA_NOMBRE_OTRO
+
+    datos = context.user_data["nueva_propiedad"]
+    datos["extras_custom"].append(texto)
+    await update.message.reply_text(
+        textos.ELEGIR_EXTRAS_PUBLICAR,
+        reply_markup=teclados.teclado_extras_publicar_multi(datos["extras_idx"]),
+    )
+    return ESPERANDO_EXTRAS
+
+
+async def recibir_extra_precio(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    texto = update.message.text.strip().replace(",", "").replace(".", "")
+    if not texto.isdigit():
+        await update.message.reply_text(textos.PRECIO_INVALIDO)
+        return ESPERANDO_EXTRA_PRECIO
+
+    datos = context.user_data["nueva_propiedad"]
+    nombre = datos["extras_pendientes"].pop(0)
+    datos["extras_con_precio"].append((nombre, float(texto)))
+    return await _empezar_a_pedir_precios_extras(update.message, context)
 
 
 async def recibir_horarios_visita(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -286,18 +399,33 @@ async def recibir_horarios_visita(update: Update, context: ContextTypes.DEFAULT_
 async def recibir_disponibilidad(update: Update, context: ContextTypes.DEFAULT_TYPE):
     texto = update.message.text.strip()
     context.user_data["nueva_propiedad"]["disponibilidad"] = "" if _quiso_saltar(texto) else texto
+    await update.message.reply_text(textos.PEDIR_DESCRIPCION_PLANTILLA)
+    return ESPERANDO_DESCRIPCION
 
+
+async def recibir_descripcion(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    texto = update.message.text.strip()
+    if len(texto) < 15:
+        await update.message.reply_text(textos.TEXTO_MUY_CORTO)
+        return ESPERANDO_DESCRIPCION
     datos = context.user_data["nueva_propiedad"]
+    datos["descripcion"] = texto
+
+    extras_texto = (
+        "\n".join(f"  - {n}: +{p:,.0f}/mes" for n, p in datos.get("extras_con_precio", []))
+        or "  (ninguno)"
+    )
     resumen = (
         f"{textos.CONFIRMAR_PUBLICACION}\n\n"
         f"Titulo (generado automaticamente): {datos['titulo']}\n"
         f"Descripcion: {datos['descripcion']}\n"
-        f"Precio por noche: {datos['precio_base']:,.0f}\n"
+        f"Precio base por noche: {datos['precio_base']:,.0f}\n"
         f"Pais: {datos['pais']}\n"
         f"Ciudad: {datos['ciudad']}\n"
         f"Direccion: {datos['direccion_escrita'] or '(sin especificar)'}\n"
         f"Ubicacion en mapa: {'Compartida' if datos.get('ubicacion') else '(sin especificar)'}\n"
         f"Metodo de pago: {datos['metodo_pago'] or '(sin especificar)'}\n"
+        f"Extras:\n{extras_texto}\n"
         f"Horarios de visita: {datos['horarios_visita'] or '(sin especificar)'}\n"
         f"Disponibilidad: {datos['disponibilidad'] or '(sin especificar)'}"
     )
@@ -331,7 +459,10 @@ async def confirmar_publicacion(update: Update, context: ContextTypes.DEFAULT_TY
             metodo_pago=datos["metodo_pago"],
             horarios_visita=datos["horarios_visita"],
             disponibilidad=datos["disponibilidad"],
+            destacados=datos.get("destacados", ""),
         )
+        for nombre, precio in datos.get("extras_con_precio", []):
+            await llamar_con_limite(agregar_extra_a_propiedad, id_nuevo, nombre, precio)
     except ErrorDelMotor as error:
         await query.message.reply_text(error.mensaje)
         return ConversationHandler.END

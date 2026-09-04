@@ -86,6 +86,52 @@ def teclado_menu_principal() -> InlineKeyboardMarkup:
     ])
 
 
+# Lista fija de metodos de pago comunes, para menu al publicar.
+METODOS_PAGO_PREDEFINIDOS = [
+    "Transferencia bancaria", "Nequi", "Daviplata", "Efectivo", "PayPal",
+]
+
+# Lista fija de extras comunes que un dueno puede ofrecer, cada uno con
+# precio MENSUAL que el propio dueno define (no lo inventamos nosotros).
+EXTRAS_PUBLICAR_PREDEFINIDOS = [
+    "TV", "Wifi", "Aseo", "Parqueadero", "Aire acondicionado",
+    "Nevera", "Cocina equipada", "Agua caliente",
+]
+
+
+def teclado_destacados_multi(seleccionados: set[str]) -> InlineKeyboardMarkup:
+    """Como teclado_destacados, pero de seleccion MULTIPLE (se puede
+    marcar mas de uno antes de tocar 'Listo')."""
+    filas = []
+    for i, t in enumerate(DESTACADOS_PREDEFINIDOS):
+        marca = "✅" if str(i) in seleccionados else "⬜"
+        filas.append([InlineKeyboardButton(f"{marca} {t}", callback_data=f"destacm:{i}")])
+    filas.append([InlineKeyboardButton("Otro (agregar el mio)", callback_data="destacm:otro")])
+    filas.append([InlineKeyboardButton("Listo", callback_data="destacm:listo")])
+    return InlineKeyboardMarkup(filas)
+
+
+def teclado_metodos_pago() -> InlineKeyboardMarkup:
+    filas = [
+        [InlineKeyboardButton(m, callback_data=f"metodopago:{i}")]
+        for i, m in enumerate(METODOS_PAGO_PREDEFINIDOS)
+    ]
+    filas.append([InlineKeyboardButton("Otro (escribir el mio)", callback_data="metodopago:otro")])
+    return InlineKeyboardMarkup(filas)
+
+
+def teclado_extras_publicar_multi(seleccionados: set[str]) -> InlineKeyboardMarkup:
+    """Seleccion multiple de que extras ofrece la propiedad. El precio
+    de cada uno se pide DESPUES, uno por uno, solo para los marcados."""
+    filas = []
+    for i, e in enumerate(EXTRAS_PUBLICAR_PREDEFINIDOS):
+        marca = "✅" if str(i) in seleccionados else "⬜"
+        filas.append([InlineKeyboardButton(f"{marca} {e}", callback_data=f"extram:{i}")])
+    filas.append([InlineKeyboardButton("Otro (agregar el mio)", callback_data="extram:otro")])
+    filas.append([InlineKeyboardButton("Listo", callback_data="extram:listo")])
+    return InlineKeyboardMarkup(filas)
+
+
 def teclado_destacados() -> InlineKeyboardMarkup:
     filas = [
         [InlineKeyboardButton(t, callback_data=f"destacado:{i}")]
