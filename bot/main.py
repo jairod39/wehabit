@@ -82,6 +82,7 @@ def construir_aplicacion() -> Application:
     conversacion_publicar = ConversationHandler(
         entry_points=[
             CallbackQueryHandler(publicar.iniciar_publicacion, pattern="^menu:publicar$"),
+            CallbackQueryHandler(publicar.publicar_otra, pattern="^publicar_otra:"),
         ],
         states={
             publicar.ESPERANDO_TIPO: [

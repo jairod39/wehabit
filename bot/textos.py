@@ -80,7 +80,13 @@ CONFIRMAR_PUBLICACION = "Revisa que todo este bien antes de publicar:"
 PUBLICACION_CANCELADA = "Sin problema, no se publico nada. Puedes intentarlo de nuevo cuando quieras."
 PUBLICACION_EXITOSA = (
     "Listo, tu propiedad ya esta publicada y visible en las busquedas. "
-    "Puedes escribirnos si necesitas editarla o darla de baja."
+    "Si tienes mas habitaciones en el mismo predio, no tienes que "
+    "volver a escribir todo, toca 'Publicar otra'."
+)
+PUBLICAR_OTRA_INTRO = (
+    "Vamos con la siguiente. Uso el mismo pais, ciudad, direccion, "
+    "ubicacion, metodo de pago y horarios de la anterior — solo te "
+    "pregunto lo que suele cambiar entre habitaciones."
 )
 
 PUBLICAR_PROXIMAMENTE = (

@@ -70,6 +70,17 @@ async def recibir_tipo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     tipo_texto = query.data.split(":", 1)[1]
     context.user_data["nueva_propiedad"]["tipo"] = tipo_texto
+
+    if context.user_data["nueva_propiedad"].get("_heredado"):
+        # Viene de 'Publicar otra': ya tiene pais/ciudad/direccion/etc
+        # de la publicacion anterior, asi que nos saltamos directo a
+        # destacados en vez de volver a preguntar todo desde cero.
+        _iniciar_destacados(context)
+        await query.message.reply_text(
+            textos.ELEGIR_DESTACADO, reply_markup=teclados.teclado_destacados_multi(set())
+        )
+        return ESPERANDO_DESTACADOS
+
     await query.message.reply_text(
         textos.ELEGIR_CONTINENTE, reply_markup=teclados.teclado_continentes()
     )
@@ -238,6 +249,13 @@ async def recibir_precio(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(textos.PRECIO_INVALIDO)
         return ESPERANDO_PRECIO
     context.user_data["nueva_propiedad"]["precio_base"] = float(texto)
+
+    if context.user_data["nueva_propiedad"].get("_heredado"):
+        # Direccion, ubicacion y metodo de pago ya vienen heredados de
+        # la publicacion anterior (mismo predio), asi que saltamos
+        # directo a extras.
+        return await _pasar_a_extras(update.message, context)
+
     await update.message.reply_text(textos.PEDIR_DIRECCION)
     return ESPERANDO_DIRECCION
 
@@ -321,6 +339,13 @@ async def _empezar_a_pedir_precios_extras(mensaje, context):
 
 async def _pasar_a_horarios(mensaje, context):
     datos = context.user_data["nueva_propiedad"]
+
+    if datos.get("_heredado") and "horarios_visita" in datos:
+        # Ya viene de la publicacion anterior (mismo predio), no
+        # preguntamos los horarios de nuevo.
+        await mensaje.reply_text(textos.PEDIR_DISPONIBILIDAD)
+        return ESPERANDO_DISPONIBILIDAD
+
     if datos["tipo"] == TipoPropiedad.HABITACION.value:
         await mensaje.reply_text(textos.PEDIR_HORARIOS_VISITA_DUENO)
         return ESPERANDO_HORARIOS_VISITA
@@ -468,5 +493,43 @@ async def confirmar_publicacion(update: Update, context: ContextTypes.DEFAULT_TY
         return ConversationHandler.END
 
     print(f"RASTRO: propiedad publicada con id={id_nuevo}", flush=True)
-    await query.edit_message_text(textos.PUBLICACION_EXITOSA)
+
+    # Guardamos lo que probablemente se repite si el dueno tiene mas
+    # de una unidad en el mismo predio (mismo pais/ciudad/direccion/
+    # ubicacion/metodo de pago/horarios), para que 'Publicar otra' no
+    # tenga que preguntarlo todo de nuevo.
+    context.user_data["plantilla_publicar"] = {
+        "pais": datos["pais"],
+        "ciudad": datos["ciudad"],
+        "direccion_escrita": datos["direccion_escrita"],
+        "ubicacion": datos.get("ubicacion", ""),
+        "metodo_pago": datos["metodo_pago"],
+        "horarios_visita": datos["horarios_visita"],
+    }
+
+    await query.edit_message_text(
+        textos.PUBLICACION_EXITOSA, reply_markup=teclados.teclado_publicar_otra()
+    )
     return ConversationHandler.END
+
+
+async def publicar_otra(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Arranca una nueva publicacion reutilizando pais/ciudad/direccion/
+    ubicacion/metodo de pago/horarios de la ultima que se publico en
+    esta misma sesion (pensado para cuando el dueno tiene varias
+    habitaciones en el mismo predio: no tiene sentido volver a
+    preguntarle todo eso por cada una).
+    """
+    print("RASTRO: publicar_otra fue llamada", flush=True)
+    query = update.callback_query
+    await query.answer()
+
+    plantilla = context.user_data.get("plantilla_publicar", {})
+    context.user_data["nueva_propiedad"] = dict(plantilla)
+    context.user_data["nueva_propiedad"]["_heredado"] = True
+
+    await query.message.reply_text(
+        textos.PUBLICAR_OTRA_INTRO, reply_markup=teclados.teclado_tipos_publicar()
+    )
+    return ESPERANDO_TIPO

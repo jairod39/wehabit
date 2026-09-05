@@ -170,6 +170,13 @@ def teclado_confirmar_publicacion() -> InlineKeyboardMarkup:
     ])
 
 
+def teclado_publicar_otra() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("Publicar otra (mismo predio)", callback_data="publicar_otra:1")],
+        [InlineKeyboardButton(textos.BOTON_VOLVER, callback_data="menu:volver")],
+    ])
+
+
 def teclado_volver_menu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(textos.BOTON_VOLVER, callback_data="menu:volver")],
